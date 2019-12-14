@@ -57,9 +57,8 @@ plotGammaTruncated <- function(shape, rate, upp, xlab = ""){
 #holahola <- Vectorize(function(x, y) sum(ttt[ttt1 == x, ttt2 == y]))
 #outer(1:2,1:2, FUN = holahola)
 # Auxiliar function only for the X update, Requires the existence of tempCollapsedByK
-#auxFnUpdateX <- Vectorize(function(iInd, jInd, zInd) sum(tempCollapsedByK[iToGroups == iInd, jToGroups == jInd, kToGroups == kInd]))
+#OLDauxFnUpdateX <- Vectorize(function(iInd, jInd, zInd) sum(tempCollapsedByK[iToGroups == iInd, jToGroups == jInd, kToGroups == kInd]))
 auxFnUpdateX <- Vectorize(function(iInd, jInd) sum(tempCollapsedByK[listDims[[dimToInclude[1]]] == iInd, listDims[[dimToInclude[2]]] == jInd]))
 
-
-
-
+collapseAuxFn <- Vectorize(function(iInd, jInd) sum(matToCollapse[listDims[[dimToInclude[1]]] == iInd, listDims[[dimToInclude[2]]] == jInd]))
+collapseMatrixFn <- function() outer(1:numBlockDims[dimToInclude[1]], 1:numBlockDims[dimToInclude[2]], FUN = collapseAuxFn)

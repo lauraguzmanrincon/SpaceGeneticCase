@@ -112,6 +112,7 @@ initConfig <- function(numIterations = 100,
 
 #' parametersVar1: mean
 #' parametersVar2: sd
+#' Note: configUpdates should be the output of initConfig() instead of using the default 13.12.2019
 initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, tR = 3.5, tS = 3.5, tG = 0.5, p = 1, l = 1),
                       parametersVar2 = list(a = 1, R = 1, S = 1, G = 1, B = 1, tR = 1, tS = 1, tG = 0.15, p = 100, l = 1),
                       a.sigma = 1,
@@ -121,7 +122,9 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
                       #B.sigma = matrix(1, nrow = numRegionsGroups, ncol = numSequenceGroups),
                       B.sigma = rep(1, numBeta),
                       l.sigma = 1,
-                      ifPlot = FALSE){
+                      ifPlot = FALSE,
+                      configUpdates = list(ifAUpdate = 1, ifRUpdate = 1, ifSUpdate = 1, ifGUpdate = 1, ifBUpdate = 1, ifXUpdate = 1,
+                                           ifPUpdate = 1, ifTauRUpdate = 1, ifTauSUpdate = 1, ifLTauGUpdate = 1)){
   
   # Parameters and variables initialisation
   if(simulatedData == 0){
@@ -155,18 +158,22 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
     #                   tau.G = 1.1,
     #                   p = ifPUpdate*0.01 + (!ifPUpdate)*sum(inSimulatedX)/(numWeeks*numSequences),
     #                   l = 3)#exp(rnorm(1, 1, 0.5)))
-    # TODO init random
-    parameters <- list(a = simulatedParam$a,
-                       G = simulatedParam$G,
-                       S = simulatedParam$S,
-                       R = simulatedParam$R,
-                       X = aperm(array(simulatedParam$X, numBlockDims[c(2,3,1)]), c(3,1,2)), # TODO !!!!! fix original simulatedParam
-                       B = simulatedParam$B,
-                       tau.S = simulatedParam$tau.S,
-                       tau.R = simulatedParam$tau.R,
-                       tau.G = simulatedParam$tau.G,
-                       p = simulatedParam$p,
-                       l = simulatedParam$l)#exp(rnorm(1, 1, 0.5)))
+
+    # OR
+    #parameters <- simulatedParam
+    # OR
+    parameters <- list(a = configUpdates$ifAUpdate*rnorm(1, mean = parametersVar1$a, sd = parametersVar2$a) + (!configUpdates$ifAUpdate)*simulatedParam$a,
+                       R = configUpdates$ifRUpdate*rnorm(numRegions, mean = parametersVar1$R, sd = parametersVar2$R) + (!configUpdates$ifRUpdate)*simulatedParam$R,
+                       S = configUpdates$ifSUpdate*rnorm(numWeeks, mean = parametersVar1$S, sd = parametersVar2$S) + (!configUpdates$ifSUpdate)*simulatedParam$S,
+                       G = configUpdates$ifGUpdate*rnorm(numSequences, mean = parametersVar1$G, sd = parametersVar2$G) + (!configUpdates$ifGUpdate)*simulatedParam$G,
+                       X = configUpdates$ifXUpdate*array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups)) + (!configUpdates$ifXUpdate)*simulatedParam$X,
+                       B = configUpdates$ifBUpdate*exp(rnorm(numBeta, mean = parametersVar1$B, sd = parametersVar2$B)) + (!configUpdates$ifBUpdate)*simulatedParam$B,
+                       tau.R = configUpdates$ifTauRUpdate*exp(rnorm(1, parametersVar1$tR, parametersVar2$tR)) + (!configUpdates$ifTauRUpdate)*simulatedParam$tau.R,
+                       tau.S = configUpdates$ifTauSUpdate*exp(rnorm(1, parametersVar1$tS, parametersVar2$tS)) + (!configUpdates$ifTauSUpdate)*simulatedParam$tau.S,
+                       tau.G = configUpdates$ifLTauGUpdate*exp(rnorm(1, parametersVar1$tG, parametersVar2$tG)) + (!configUpdates$ifLTauGUpdate)*simulatedParam$tau.G,
+                       p = configUpdates$ifPUpdate*rbeta(1, shape1 = parametersVar1$p, shape2 = parametersVar2$p) + (!configUpdates$ifPUpdate)*simulatedParam$p, #plotBeta(1,100)
+                       l = configUpdates$ifLTauGUpdate*exp(rnorm(1, parametersVar1$l, parametersVar2$l)) + (!configUpdates$ifLTauGUpdate)*simulatedParam$l) # plotLogNorm
+    
     # ???
     #if(0){
     #  #str(parameters)
@@ -251,7 +258,9 @@ createStorage <- function(config){
                             tau.S = rep(0, numIterations),
                             tau.G = rep(0, numIterations),
                             p = rep(0, numIterations),
-                            l = rep(0, numIterations))
+                            l = rep(0, numIterations),
+                            scases = matrix(0, nrow = numWeeks, ncol = numIterations),
+                            ecases = matrix(0, nrow = numWeeks, ncol = numIterations))
   storage <- list(accept = accept,
                   reject = reject,
                   parameters = parameters.stored)

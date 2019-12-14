@@ -7,10 +7,10 @@
 # ------------------------------ #
 
 runTinis <- 1 # !!!!!!!!!!!!!!!!!!!!!
-simulatedData <- 1
+simulatedData <- 0
 
 if(runTinis == 0){
-  if(0){
+  if(1){
     # 0. Load Workspace ----
     source("/home/laura/Dropbox/Laura/PhD_Year2/04_AboutApproaches/RCode/2018_04/00_Functions.R")
     setwd("/home/laura/Dropbox/Laura/PhD_Year3/")
@@ -36,7 +36,8 @@ if(runTinis == 0){
       # note simulatedData is stored as 0 in the first file!
       load("07_MixedModelsP2/RCode_201911/38_Files/38_01_21112019_MCMCInputTinis.RData") # CONFIG: notsim, dims23, interval3, beta3, cuts50/300, regionOXMSOA
       #load("07_MixedModelsP2/RCode_201911/38_Files/38_13_21112019_SimulatedData.RData") # yy, simulatedParam 24112019
-      load("07_MixedModelsP2/RCode_201911/38_Files/38_13_fastSim27112019_SimulatedData.RData") # yy, simulatedParam 24112019
+      #load("07_MixedModelsP2/RCode_201911/38_Files/38_13_fastSim27112019_SimulatedData.RData") # yy, simulatedParam 24112019 (Skype meeting Simon 25.11.2019)
+      load("07_MixedModelsP2/RCode_201911/38_Files/38_13_03122019_SimulatedData.RData") # yy, simulatedParam
       y <- yy
       simulatedData <- 1
     }
@@ -55,6 +56,8 @@ if(runTinis == 0){
 #nameOutput <- "38_00_21112019_SimulOutputTinis_p.RData"
 #nameOutput <- "38_00_21112019_SimulOutputTinis_tr.RData"
 #nameOutput <- "38_00_21112019_SimulOutputTinis_ltg.RData"
+#nameOutput <- "38_00_03122019_MCMCOutputDellToSim.RData"
+nameOutput <- "38_00_0312201902_MCMCOutputTinis.RData"
 
 # 2. Set-up environment ----
 source(paste0(dirFiles, "38_02_AuxiliarFn.R"))
@@ -67,19 +70,22 @@ source(paste0(dirFiles, "38_11_Prior_Likelihoods.R"))
 
 # 4. Pre-iterations ----
 cat("Sim", simulatedData, "/n")
-constants <- initConstants()
-#config <- initConfig(numIterations = 1000, burnIn = 50) # 1000
+constants <- initConstants(aP = 1, bP = numBlockDims[dimBeta] - 1, aB = 2, bB = 1)
+#constants <- initConstants(aP = 1, bP = 50, aB = 2, bB = 1) # for fastSim27112019
+#constants <- initConstants(aP = 1, bP = 5, aB = 2, bB = 1) # for 03122019
+#config <- initConfig(numIterations = 1000, burnIn = 50) # estandar
+#config <- initConfig(numIterations = 50, burnIn = 10) # quick exploration
 #config <- initConfig(numIterations = 1000, burnIn = 50, ifAUpdate = 1, ifRUpdate = 0, ifSUpdate = 0, ifGUpdate = 0, ifBUpdate = 0, ifXUpdate = 0,
 #                     ifPUpdate = 0, ifTauRUpdate = 0, ifTauSUpdate = 0, ifLTauGUpdate = 0)
-config <- initConfig(numIterations = 1000, burnIn = 50,
-                     ifAUpdate = 0, ifRUpdate = 0, ifGUpdate = 1, ifBUpdate = 0, ifXUpdate = 0,
-                     ifPUpdate = 0, ifTauRUpdate = 0, ifLTauGUpdate = 1)
+config <- initConfig(numIterations = 5000, burnIn = 50,
+                     ifAUpdate = 1, ifRUpdate = 1, ifGUpdate = 1, ifBUpdate = 1, ifXUpdate = 1,
+                     ifPUpdate = 1, ifTauRUpdate = 1, ifLTauGUpdate = 1)
 # TODO create optional constructParam() function
-out <- initParam()
+out <- initParam(configUpdates = config) # Run after initConfig
 storage <- createStorage(config)
 adaptive <- adaptiveConfig(FALSE)
 
-simulatedParam$p <- mean(simulatedParam$X) # !!!!!!!!!!!!!!!!!!!!!!!! BORRAR
+#simulatedParam$p <- mean(simulatedParam$X) # !!!!!!!!!!!!!!!!!!!!!!!! BORRAR
 
 parameters <- out$parameters
 sigmaJumps <- out$sigmaJumps
@@ -178,6 +184,16 @@ for (it in 1:numIterations) {# 1:numIterations  (numIterations + 1):(2*numIterat
   storage$parameters$tau.G[it] <- parameters$tau.G
   storage$parameters$p[it] <- parameters$p
   storage$parameters$l[it] <- parameters$l
+  
+  # Store expected number of cases
+  # TODO test
+  if(1 %in% dimToInclude){
+    matrixG <- aperm(array(parameters$G, dim = c(numSequences, numWeeks, numRegions)), perm = c(2,3,1))
+    matrixS <- array(parameters$S, dim = c(numWeeks, numRegions, numSequences))
+    matrixR <- aperm(array(parameters$R, dim = c(numRegions, numWeeks, numSequences)), perm = c(2,1,3))
+    storage$parameters$scases[,it] <- apply(matrixPop*exp(parameters$a + matrixS + matrixR + matrixG), 1, sum)
+    storage$parameters$ecases[,it] <- apply(matrixPop*exp(parameters$a + matrixS + matrixR + matrixG)*matrixXBexp, 1, sum)
+  }
   
   cat("\n")
 }

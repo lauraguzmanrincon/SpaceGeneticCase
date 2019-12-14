@@ -100,6 +100,8 @@ if(1){
   # Content: hClustOut ddata cat(readme) exploreCutFn clusterInfoFn
   # NOTE that hClustCut has the same ordering as colsDistanceMatrixGroupsNoDups and groupToClusterTable$groupDupId
   load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18112019_ClustersKInfo.RData")
+  # hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups*
+  # *added on the 05.12.2019 (forgotten to store link of genomes by mimstake (?))
 }else{
   # Already uploaded!
   #load("/home/laura/Dropbox/Laura/PhD_Year2/06_MixedModels/RCode_201903/15_Input_MCMCCorrected04032019.RData")
@@ -114,7 +116,8 @@ if(1){
   
   dhc <- as.dendrogram(hClustOut)
   ddata <- data.table(ggdendro::segment(ggdendro::dendro_data(dhc, type = "rectangle")))
-  readme <- c("hClustObj built using hclust with average method\n", "ddata created using package ggdendro")
+  readme <- c("hClustObj built using hclust with average method\n", "ddata created using package ggdendro",
+              "*Recall: column order in distanceMatrixGroups is given by groupSequencesCore$groupId")
   
   # Create functions
   #' Explores how cutting the tree looks like for different pairs of heighCutLow, heighCutHigh
@@ -184,7 +187,7 @@ if(1){
     return(list(clusterInfo = clusterInfo, groupToClusterTable = groupToClusterTable,
                 distanceMatrixClusters = distanceMatrixClusters, numClustLow = numClustLow, numClustHigh = numClustHigh))
   }
-  #save(hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, file = "07_MixedModelsP2/RCode_201911/38V2_II_18112019_ClustersKInfo.RData")
+  #save(hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups, file = "07_MixedModelsP2/RCode_201911/38V2_II_18112019_ClustersKInfo.RData")
 }
 
 # 11. Choose heighCutLow, heighCutHigh (exploration)
