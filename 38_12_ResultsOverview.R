@@ -1,10 +1,11 @@
 # All sections require 0. 1. 2.
 # Never re-run 0. (may overwrite some variables)
+# Run to 2. and 3. if MCMC just finished and wanna check output
 
 if(0){
   # 0. Load workspace ----
-  source("/home/laura/Dropbox/Laura/PhD_Year2/04_AboutApproaches/RCode/2018_04/00_Functions.R")
-  #source("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201908/34_HeaderFor201908.R")
+  source("/home/laura/Documents/PhD_Year2_NoDropbox/PhD_Year2_Dell/04_AboutApproaches/RCode/2018_04/00_Functions.R")
+  source("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201908/34_HeaderFor201908.R") # header included?
   setwd("/home/laura/Dropbox/Laura/PhD_Year3/")
   allPlotsPath <- "07_MixedModelsP2"
   
@@ -16,36 +17,73 @@ if(0){
   #uploadPackages(c("rgdal", "scales"))
   tempDir <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/Areafiles_201907/"
   tempName <- paste0(tempDir, "15_Local_Authority_Districts_December_2018_Boundaries_GB_BFC")
-  tempMap <- readOGR(dsn = tempName, layer = "Local_Authority_Districts_December_2018_Boundaries_GB_BFC")
-  data.shapeLADS <- spTransform(tempMap, CRS("+proj=longlat +datum=WGS84"))
+  tempMap <- rgdal::readOGR(dsn = tempName, layer = "Local_Authority_Districts_December_2018_Boundaries_GB_BFC")
+  data.shapeLADS <- sp::spTransform(tempMap, CRS("+proj=longlat +datum=WGS84"))
   
   # REMOVE following after including header before?
   # For groups and clusters
-  load("/home/laura/Dropbox/Laura/PhD_Year2/06_MixedModels/RCode_201903/15_Input_MCMCCorrected04032019.RData")
+  #load("/home/laura/Dropbox/Laura/PhD_Year2/06_MixedModels/RCode_201903/15_Input_MCMCCorrected04032019.RData")
   # Content: numSequences, numWeeks, y, distanceMatrixGroups, groupSequencesCore
   # Recall: column order in distanceMatrixGroups is given by groupSequencesCore$groupId
-  rm(numWeeks, y, numSequences)
-  suppressWarnings(groupSequencesCore[, numWeek := NULL])
-  suppressWarnings(groupSequencesCore[, weekId := NULL])
+  #rm(numWeeks, y, numSequences)
+  #suppressWarnings(groupSequencesCore[, numWeek := NULL])
+  #suppressWarnings(groupSequencesCore[, weekId := NULL])
   
   # General data
-  load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/Data/FS101013_Datasets_V3_26R.RData") # ...
+  #load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/Data/FS101013_Datasets_V3_26R.RData") # ...
 }
 
 # 1. Upload MCMC output file + others ----
 #dirFiles <- "FilesFromLocal/38_Files/"
 #dirFiles <- "07_MixedModelsP2/RCode_201911/38_Files/"
 #dirFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_201911/"
-nameFiles <- "21112019"
-nameFilesOut <- "0312201901"
+# --
+#nameFiles <- "21112019"
+#nameFilesOut <- "0312201901"
+#simulatedDataRes <- 0
+#typ <- "OX"
+#dirInputFiles <- "07_MixedModelsP2/RCode_201911/38_Files/"
+#dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_201911/"
+# --
+#nameFiles <- "18122019_MCMCInput_GOX"
+#nameFilesOut <- "1812201901_MCMCOutput_GOX"
+#dirInputFiles <- "07_MixedModelsP2/RCode_201912/"
+#dirOutputFiles <- "07_MixedModelsP2/RCode_201912/"
+# -- Short simulation on Dell
+#nameFiles <- "18122019_MCMCInput_GOX"
+#nameFilesOut <- "0601202001_MCMCOutput_newprior_SE" ######### 0201202001_MCMCOutput_newprior 0601202001_MCMCOutput_newprior_SE
+#dirInputFiles <- "07_MixedModelsP2/RCode_201912/"
+#dirOutputFiles <- "07_MixedModelsP2/RCode_201912/"
+# -- Large simulations on Tinis, three kernels
+#nameFiles <- "18122019_MCMCInput_GOX"
+#nameFilesOut <- "0601202001_MCMCOutputTinis_MAT" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # 798311
+#nameFilesOut <- "0601202001_MCMCOutputTinis_SE" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # 798312
+#nameFilesOut <- "0601202001_MCMCOutputTinis_MAT32" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # 798341
+#dirInputFiles <- "07_MixedModelsP2/RCode_201912/"
+#dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_202001/"
+# -- Short simulation with Bijk USELESS
+#nameFilesOut <- "0701202001_MCMCOutputTinis_blockBeta" # tauG: 1,0.01 rho: 10,0.2 r: 10/50 kernel: 3/2 # too slow beta # 7983496
+#dirInputFiles <- "07_MixedModelsP2/RCode_201912/"
+# -- Short simulation with B bug corrected 07.01
+#nameFiles <- "18122019_MCMCInput_GOX"
+#nameFilesOut <- "temp_MAT32"
+#nameFilesOut <- "temp_SE_Tinis"
+#dirInputFiles <- "07_MixedModelsP2/RCode_201912/"
+#dirOutputFiles <- "07_MixedModelsP2/RCode_202001/"
+# -- Large simulations on Tinis, three kernels, constraint correction
+nameFiles <- "18122019_MCMCInput_GOX"
+nameFilesOut <- "2601202002_Tinis_MAT12_Constraint" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # 798311
+nameFilesOut <- "2601202001_Tinis_SE_Constraint" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # 798312
+nameFilesOut <- "2601202001_Tinis_MAT32_Constraint" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # 798341
+dirInputFiles <- "07_MixedModelsP2/RCode_201912/"
+dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_202001/"
+# Other parameters
 simulatedDataRes <- 0
 typ <- "OX"
-dirInputFiles <- "07_MixedModelsP2/RCode_201911/38_Files/"
-dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_201911/"
-dirInputFile <- paste0(dirInputFiles, "38_01_", nameFiles, "_MCMCInputTinis.RData")
+dirInputFile <- paste0(dirInputFiles, "38_01_", nameFiles, ".RData")
 load(dirInputFile) # ...
 if(simulatedDataRes == 0){
-  dirOutputFile <- paste0(dirOutputFiles, "38_00_", nameFilesOut, "_MCMCOutputTinis.RData")
+  dirOutputFile <- paste0(dirOutputFiles, "38_00_", nameFilesOut, ".RData")
   load(dirOutputFile) # constants, config, out, storage, adaptive, it, runningTime
 }else{
   #nameOutput <- "38_00_21112019_SimulOutputTinis_a.RData"
@@ -64,6 +102,15 @@ if(simulatedDataRes == 0){
   load(dirSimOutputFile) # yy, simulatedParam 24112019
 }
 
+# Other updates
+if(typ == "OX"){
+  chosenAreas <- chosenAreasOX
+  mapLims <- list(x = c(-1.8,-0.7), y = c(51.44, 52.25), xE = c(-1.3,-1.165), yE = c(51.71, 51.8))
+}else{
+  chosenAreas <- chosenAreasTW
+  mapLims <- list(x = c(-2.66,-1.36), y = c(54.8, 55.8), xE =  c(-1.41,-1.78), yE = c(54.95, 55.1))
+}
+
 # Overview
 if(0){
   str(inputForData)
@@ -75,23 +122,15 @@ if(0){
   runningTime
 }
 
-# Other updates
-if(typ == "OX"){
-  chosenAreas <- chosenAreasOX
-  mapLims <- list(x = c(-1.8,-0.7), y = c(51.44, 52.25), xE = c(-1.3,-1.165), yE = c(51.71, 51.8))
-}else{
-  chosenAreas <- chosenAreasTW
-  mapLims <- list(x = c(-2.66,-1.36), y = c(54.8, 55.8), xE =  c(-1.41,-1.78), yE = c(54.95, 55.1))
-}
-
 # 2. Build data from MCMC output for visualisations ----
+# a. Traces
 #finalIterations <- 1001:5000
 finalIterations <- (config$burnIn + 1):config$numIterations
-#finalIterations <- 1:500
+#finalIterations <- 1:75
 #finalIterations <- 1:config$numIterations
 #finalIterations <- 1:(it - 1)
 sizePlot <- 15
-#simulatedDataRes <- 0 # BORRAR
+simulatedDataRes <- 0
 
 # Check output
 #gIndices <- union((freqGUpdate != 1)*which((finalIterations)%%freqGUpdate == 1), (freqGUpdate == 1)*(finalIterations))
@@ -99,7 +138,8 @@ outputA <- storage$parameters$a[finalIterations]
 outputG <- storage$parameters$G[,finalIterations]
 outputS <- array(storage$parameters$S[,finalIterations], dim = c(numPeriods, length(finalIterations))) # just in case is of size 1
 outputR <- array(storage$parameters$R[,finalIterations], dim = c(numRegions, length(finalIterations)))
-outputB <- storage$parameters$B[,finalIterations]
+if(dimBeta != 123) outputB <- storage$parameters$B[,finalIterations]
+if(dimBeta == 123) outputB <- storage$parameters$B/config$numIterations
 outputTauG <- storage$parameters$tau.G[finalIterations]
 outputTauS <- storage$parameters$tau.S[finalIterations]
 outputTauR <- storage$parameters$tau.R[finalIterations]
@@ -111,7 +151,23 @@ setnames(outputX, c("x"), c("it"))
 #setnames(outputX, c("x","row","col"), c("it","week","region"))
 nrow(outputX)/(prod(numBlockDims)*length(finalIterations))
 
-# 3. MCMC output: quick chain visualisation ----
+# b. Outbreak info
+THRESHOLD <- 0.1
+outProbs <- outputX[, .N/length(finalIterations), .(row, col)]
+outProbs[, id := .I]
+setnames(outProbs, "V1", "proba")
+outProbs[, sizeB := rowMeans(outputB)[col]]
+
+setkey(casesForModels, dim2Cases)
+setkey(regionsForModels, col)
+casesForModels[regionsForModels, region := region]
+setkeyv(casesForModels, c("region", "clusterHighId"))
+setkeyv(outProbs, c("row", "col"))
+casesForModels[outProbs, c("idOutbreak", "probaOutbreak") := .(id, proba)]
+casesForModels[, sizeOutbreak := .N, idOutbreak]
+
+# 3. MCMC output: quick chain visualisation to overview MCMC ----
+# Requires 0. 1. 2.
 # Check acceptance rate ----
 # Recall: it's 1 for X, tauS, tauG, p
 data.table(names = names(storage$accept),
@@ -164,10 +220,10 @@ g3 <- ggplot(data.table(it = finalIterations, value = outputP),
   #geom_hline(yintercept = ifelse(simulatedDataRes, sum(simulatedParam$X)/prod(dim(simulatedParam$X)), NaN))
   geom_hline(yintercept = ifelse(simulatedDataRes, simulatedParam$p, NaN))
 g4 <- ggplot(data.table(it = finalIterations, value = outputS[sampleSPlot,]), aes(x = it, y = value)) +
-  geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $U_j$")) +
+  geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $R_j$")) +
   geom_hline(yintercept = ifelse(simulatedDataRes, simulatedParam$S[sampleSPlot], NaN))
 g10 <- ggplot(data.table(it = finalIterations, value = outputR[sampleRPlot,]), aes(x = it, y = value)) +
-  geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $S_j$")) +
+  geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $U_j$")) +
   geom_hline(yintercept = ifelse(simulatedDataRes, simulatedParam$R[sampleRPlot], NaN))
 g5 <- ggplot(data.table(it = finalIterations, value = outputB[sampleBPlot,]), aes(x = it, y = value)) +
   geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $B_k$")) +
@@ -183,8 +239,9 @@ g8 <- ggplot(outputX[, .N/prod(numBlockDims), by = .(it)], aes(x = it, y = V1)) 
 if(2 %in% dimToInclude & 3 %in% dimToInclude){
   #multiplot(g4,g10,g7,g5,g0, g2,g9,g1,g6,g3, cols = 2) # Sj Rj Gk Bk a // tauS tauR tauG ro p
   multiplot(g10,g7,g5,g0, g9,g1,g6,g3, cols = 2) # Sj Rj Gk Bk a // tauS tauR tauG ro p
-  g8
+  #g8
   #g3
+  if(dimBeta == 123) multiplot(g10,g7,ggplot(),g0, g9,g1,g6,g3, cols = 2) 
 }
 #savePDF(multiplot(g10,g7,g5,g0, g9,g1,g6,g3, cols = 2), "Plot25112019_01_MCMCoutput_Real", 8, 10)#12)
 #savePDF(multiplot(g4,g7,g5,g0,g2,g1,g6,g3, cols = 2), "Plot25112019_01_MCMCoutput_Real", 8, 10)#12)
@@ -300,13 +357,26 @@ gPos <- ggplot(dataToPlotPos, aes(x = x, fill = label, color = label)) + facet_w
   geom_line(aes(y = y)) + theme_laura() + labs(x = "", y = "density", color = "", fill = "")
 gPos #savePDF(gPos, "Plot25112019_02_MCMCposterior_Real", 8, 7)
 
+# Other exploratory plots
+multiplot(plotGamma(constants$aB, constants$bB), ggplot(data.table(rowMeans(outputB)), aes(V1)) + geom_histogram(binwidth = 0.1), cols = 2)
+ggplot(data.table(outputTauG, outputL), aes(x = outputTauG, y = outputL)) + geom_path() + geom_point() + theme_laura()
+if(config$maternParameter == 1/2){
+  plot(1:50, exp(-seq(1,50,1)/mean(outputL))/mean(outputTauG))
+}else if(config$maternParameter == 3/2){
+  plot(1:50, (1 + (sqrt(3)*seq(1,50,1)/mean(outputL)))*exp(-sqrt(3)*seq(1,50,1)/mean(outputL))/mean(outputTauG))
+}else if(config$maternParameter == 0){
+  plot(1:50, exp(-seq(1,50,1)^2/(2*mean(outputL)^2))/mean(outputTauG))
+}
+  
 # 4. MCMC output: formal chain visualisation (table, plots) ----
+# Requires: 0. 1. 2.
 # Plot traces* ----
 # copied and adapted from 36d_V2.R/9.Traces
 #sampleSPlot <- sample(1:numWeeks, 1)
 sampleRPlot <- sample(1:numRegions, 1)
 sampleBPlot <- sample(1:numRegionsGroups, 1)
 sampleGPlot <- sample(1:numSequences, 1)
+sampleGPlot
 plotTraces <- rbind(data.table(id = 1, variable = "tau[U]", iteration = 1:length(finalIterations), chain = 1, value = outputTauR),
                     data.table(id = 2, variable = "tau[G]", iteration = 1:length(finalIterations), chain = 1, value = outputTauG),
                     data.table(id = 3, variable = "p", iteration = 1:length(finalIterations), chain = 1, value = outputP),
@@ -326,45 +396,37 @@ gtr#savePDF(gtr, fileName = "Plot17102019_02_36d_Traces", 8, 7)
 #savePDF(gtr, fileName = "Plot05122019_02_38p12c4_0312201901_Tinis_OX_Traces", 8, 7)
 
 # 5. MCMC output: results visualisation ----
-
+# Requires: 0. 1. 2.
 # Probability of outbreaks* (... as in 36d.R/10.c. for ChST) ----
 # Note that we are plotting only points with prob > 0...!!!
-THRESHOLD <- 0.05
-outProbs <- outputX[, .N/length(finalIterations), .(row, col)]
-outProbs[, id := .I]
-#plot(sort(temp$V1))
-gThr <- ggplot(data.table(x = 1:nrow(outProbs), p = sort(outProbs$V1)), aes(x = x, y = p)) + geom_point() + theme_laura(size = 16) +
+gThr <- ggplot(data.table(x = 1:nrow(outProbs), p = sort(outProbs$proba)), aes(x = x, y = p)) + geom_point() + theme_laura(size = 16) +
   labs(x = TeX("$X_{\\sigma(i),\\xi(k)}$"), y = "probability of outbreak") + scale_x_continuous(breaks = c(1,5000,10000,nrow(outProbs)), labels = rep("", 4)) +
   geom_hline(yintercept = THRESHOLD, linetype = 2, colour = "gray50")
 gThr#savePDF(gThr, fileName = "Plot05122019_01_33p12c5_0312201901_Tinis_OX_outP", 6, 4)
 
 #ggplot(outputX[, .N, by = .(row, col)][N>50], aes(x = col, y = row, color = N)) + geom_point() + theme_laura()
 
-# Time proximity within outbreaks (SG Only) ----
-outProbs[V1 > 0.2] # region clusterHighId
-regionsForModels[region == 47]
-genomeForModels[clusterHighId == 271]
-casesForModels[dim2Cases %in% regionsForModels[region == 47, col] & dim3Cases %in% genomeForModels[clusterHighId == 271, clusterLowId]]
-casesForModels[dim2Cases %in% regionsForModels[region == 26, col] & dim3Cases %in% genomeForModels[clusterHighId == 234, clusterLowId]]
+# Time proximity within outbreaks (SG Only)* ----
+if(0){
+  outProbs[proba > 0.2] # region clusterHighId
+  regionsForModels[region == 26]
+  genomeForModels[clusterHighId == 238]
+  casesForModels[dim2Cases %in% regionsForModels[region == 84, col] & dim3Cases %in% genomeForModels[clusterHighId == 395, clusterLowId]]
+  casesForModels[dim2Cases %in% regionsForModels[region == 26, col] & dim3Cases %in% genomeForModels[clusterHighId == 238, clusterLowId]]
+}
 
 #matToCollapse <- drop(y)
 #ttt <- collapseMatrixFn()
 
-setkey(casesForModels, dim2Cases)
-setkey(regionsForModels, col)
-casesForModels[regionsForModels, region := region]
-
-setkeyv(casesForModels, c("region", "clusterHighId"))
-setkeyv(outProbs, c("row", "col"))
-casesForModels[outProbs, c("idOutbreak", "probaOutbreak") := .(id, V1)]
-
 dataToPlot <- casesForModels[!is.na(idOutbreak), .(.N, max(numWeek_corrected) - min(numWeek_corrected)), .(idOutbreak, probaOutbreak)]
 setnames(dataToPlot, c("N", "V2"), c("sizeOutbreak", "interval"))
 #ggplot(dataToPlot, aes(x = probaOutbreak, y = interval, colour = sizeOutbreak == 1)) + geom_point() + theme_laura()
-gTOut <- ggplot(dataToPlot[sizeOutbreak > 1], aes(x = probaOutbreak, y = interval)) + geom_point(size = 4) + theme_laura(size = 16) +
-  labs(x = TeX("probability of outbreak $\\rho_{\\sigma,\\xi}$"), y = TeX("max. temporal distance within block $\\sigma\\xi$ (weeks)"))
+gTOut <- ggplot(dataToPlot[sizeOutbreak > 1], aes(x = probaOutbreak, y = interval)) + geom_point(size = 4) + theme_laura(size = 15) +
+  labs(x = TeX("probability of outbreak $\\rho_{\\sigma\\xi}$"), y = TeX("max. temporal distance within block $\\sigma\\xi$ (weeks)"))
 gTOut#savePDF(gThr, fileName = "Plot05122019_02_33c8_0312201901_Tinis_OX_outP", 6, 4)
 #savePDF(gTOut, fileName = "Plot05122019_05_38p12c4_0312201901_Tinis_OX_Traces", 8, 7)
+#savePDF(gTOut, fileName = "Plot19122019_05_38p12c4_1812201901_Local_OX_Traces", 8, 7)
+#savePDF(gTOut, fileName = "Plot19022020_04_38p12c4_2601202002_M12_TimeComp", 8, 5.5)
 
 # Plot splitstree TODO ----
 distObj <- as.dist(distanceMatrixMCMC)
@@ -393,9 +455,10 @@ ggplot(df2tree, aes(x, y)) + geom_tree()
 ttt <- ape::read.nexus(file = "/home/laura/Desktop/hhh.nex")
 ttt <- treeio::read.tree(file = "/home/laura/Desktop/hhh.nex")
 
-# Plot G using hclust* ----
+# Plot G using hclust ----
 # CHOOSE the clustering used for data in dirInputFile
-load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18112019_ClustersKInfo.RData")
+#load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18112019_ClustersKInfo.RData")
+load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18122019_ClustersKInfo_OX.RData")
 # hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups* (forgotten)
 cat(readme)
 
@@ -461,6 +524,7 @@ devtools::install_github("thomasp85/patchwork")
 library(patchwork)
 gGT <- gG1 + gG2 + plot_layout(ncol = 1)
 #savePDF(gGT, fileName = "Plot05122019_06_38p12c5_0312201901_Tinis_OX_G", 12, 10)
+#savePDF(gGT, fileName = "Plot19122019_06_38p12c5_1812201901_Local_OX_G", 12, 10)
 
 plot(hClustOut)
 # plot adapted from 39_01.R/II/11.
@@ -481,9 +545,13 @@ spatialInfo[order(col), risk975 := apply(outputR, 1, quantile, 0.975)]
 spatialInfo[order(col), relRisk := apply(exp(outputR), 1, mean)]
 
 tempQuants <- quantile(abs(log(spatialInfo$relRisk)), c(1/9,3/9,5/9,7/9,9/9))
+# (04.01.2020 correction: better max label and avoid possible NAs by round)
+tempMaxCorrection <- ceiling(100*max(spatialInfo$relRisk))/100 # trick not done in Maps to avoid problems with round, and also avoid a large maxima label
 spatialInfo[, labels := cut(relRisk,
-                            breaks = c(0, sort(round(exp(c(rev(-tempQuants), tempQuants)), digits = 2))[2:(2*length(tempQuants))]),
+                            breaks = c(0, sort(round(exp(c(rev(-tempQuants), tempQuants)), digits = 2))[2:(2*length(tempQuants) - 1)], tempMaxCorrection),
+                            #breaks = c(0, sort(round(exp(c(rev(-tempQuants), tempQuants)), digits = 2))[2:(2*length(tempQuants))]),
                             include.lowest = F)]
+
 dataToMap <- data.table(fortify(chosenAreas$shpLSOA), key = "id") # or broom::tidy
 setkey(spatialInfo, mapRn)
 dataToMap[spatialInfo, c("labels", "relRisk") := .(labels, relRisk)]
@@ -515,14 +583,247 @@ g5 <- ggplot(dataToMap, aes(x = long, y = lat)) +
 g5#savePDF(g5, fileName = "Plot21082019_05_33c8_2008201901_Tinis_OX_map2", 4, 4)
 #savePDF(g5, fileName = "Plot05122019_04_38p12c5_0312201901_Tinis_OX_map2", 4, 4)
 
+# .Spatial overview ----
+# (05.02.2020)
+spatialInfo[order(-relRisk)]
+spatialInfo[, .N, .(RUC11CD,RUC11)]
+spatialInfo[, .(min(relRisk), mean(relRisk), max(relRisk), mean(riskMean)), .(RUC11CD,RUC11)]
+mean(spatialInfo$relRisk)
+mean(exp(outputR))
+plot(exp(rowMeans(outputR)), rowMeans(exp(outputR)))
+sum(exp(rowMeans(outputR)) == rowMeans(exp(outputR)))
+mean(exp(rowMeans(outputR)))
+mean(rowMeans(exp(outputR)))
+plot(apply(outputR, 1, e1071::skewness))
+plot(apply(outputR, 1, e1071::skewness), rowMeans(exp(outputR)) - exp(rowMeans(outputR)))
+plot(apply(outputR, 1, e1071::skewness), apply(outputR, 1, sd))
+plot(spatialInfo$estimPop2015, spatialInfo$relRisk)
+
+# Plot tree - sandbox ----
+# Conclusion: Tried mst but unclear how to make a nice plot out of it :/
+
+coo <- matrix(runif(10), ncol = 2)
+ttt <- ape::mst(dist(coo))
+spdep::plot.mst(x = ttt, coords = coo)
+
+library(igraph)
+g <- erdos.renyi.game(10, 3/10)
+mst <- minimum.spanning.tree(g)
+par(mfrow=c(1,2), mar=c(0,1,0.75,0)) # sub-plots and margins
+plot(g , main="Graph")
+plot(mst, main = "MST")
+igraph::plot.igraph(mst)
+igraph::plot.igraph(ttt)
+
+library(fossil)
+data(fdata.mat)
+fdata.dist<-dino.dist(fdata.mat)
+dino.mst<-dino.mst(fdata.dist)
+
+# 17.12
+ig <- graph_from_adjacency_matrix(dino.mst, mode = "undirected")
+mst <- igraph::minimum.spanning.tree(ig)
+igraph::plot.igraph(mst)
+ape::as.igraph.phylo(mst, FALSE)
+library(ggtree)
+ggplot(mst)
+
+distM <- as.dist(distanceMatrixGroups)
+dino.mst <- dino.mst(distM)
+save(dino.mst, file = "hola.RData")
+load("hola.RData")
+ig <- graph_from_adjacency_matrix(dino.mst, mode = "undirected")
+mst <- igraph::minimum.spanning.tree(ig)
+igraph::plot.igraph(mst)
+tkplot(mst)
+
+#18.12 :)
+# Este si fue!
+# https://yulab-smu.github.io/treedata-book/chapter9.html
+dino.nj <- ape::nj(distM)
+#ggtree(dino.nj) + theme_tree2() + geom_tiplab(align = TRUE, linesize=.5)
+p <- ggtree(dino.nj) + theme_tree()
+d1 <- data.frame(id = dino.nj$tip.label, val = rnorm(3695, sd = 3))
+facet_plot(p, panel = "dot", data = d1, geom = geom_point, aes(x = val), color = 'red3')
+
+# Plot tree ----
+distM <- as.dist(distanceMatrixMCMC)
+njTree <- ape::nj(distM)
+p <- ggtree(njTree) + theme_tree2()
+d1 <- data.frame(id = njTree$tip.label, val = rowMeans(outputG))
+gt <- facet_plot(p, panel = "G_k", data = d1, geom = geom_point, aes(x = val), color = 'red3', size = 4) +
+  theme(strip.background = element_rect(fill = NA, colour = "gray90"), strip.text = element_text(size = 22),
+        axis.text = element_text(size = 20))
+gt#savePDF(gt, fileName = "Plot19122019_07_38p12c5_1812201901_Local_OX_G_Tree", 12, 10)
+
+# im guessing the order of matrix is same as outputG:
+#outputG
+#genomeForModels
+if(0){
+  difOutput <- outer(rowMeans(outputG), rowMeans(outputG), FUN = function(x,y) abs(x - y))
+  distanceMatrixMCMC
+  dataToPlot <- data.table(cbind(melt(difOutput), melt(distanceMatrixMCMC)))
+  names(dataToPlot) <- c("x", "y", "difG", "xx", "yy", "dist")
+  dataToPlot[, sum(x != xx) + sum(y != yy)] == 0
+  ggplot(dataToPlot[x < y], aes(x = dist, y = difG)) + geom_point() + theme_laura()
+}
+
+# Covariance function**41.R/II ----
+dataDistKernel <- data.table(dis = 0:50)
+if(config$maternParameter == 1/2){
+  dataDistKernel[, mean := sapply(dis, function(d) mean(exp(-d/outputL)/outputTauG))] # forgot how to do it in once
+  dataDistKernel[, pDn := sapply(dis, function(d) quantile(exp(-d/outputL)/outputTauG, 0.025))]
+  dataDistKernel[, pUp := sapply(dis, function(d) quantile(exp(-d/outputL)/outputTauG, 0.975))]
+}else if(config$maternParameter == 0){
+  dataDistKernel[, mean := sapply(dis, function(d) mean(exp(-d^2/2*outputL^2)/outputTauG))]
+  dataDistKernel[, pDn := sapply(dis, function(d) quantile(exp(-d^2/2*outputL^2)/outputTauG, 0.025))]
+  dataDistKernel[, pUp := sapply(dis, function(d) quantile(exp(-d^2/2*outputL^2)/outputTauG, 0.975))]
+}else if(config$maternParameter == 3/2){
+  dataDistKernel[, mean := sapply(dis, function(d) mean((1 + (sqrt(3)*d/outputL))*exp(-sqrt(3)*d/outputL)/outputTauG))]
+  dataDistKernel[, pDn := sapply(dis, function(d) quantile((1 + (sqrt(3)*d/outputL))*exp(-sqrt(3)*d/outputL)/outputTauG, 0.025))]
+  dataDistKernel[, pUp := sapply(dis, function(d) quantile((1 + (sqrt(3)*d/outputL))*exp(-sqrt(3)*d/outputL)/outputTauG, 0.975))]
+}
+ggplot(dataDistKernel, aes(x = dis, y = mean)) + geom_ribbon(aes(ymin = pDn, ymax = pUp), fill = "grey70") + geom_line() + theme_laura() +
+  labs(x = "distance", y = "covariance")
+
+#install.packages("ggExtra")
+gg <- ggplot(data.table(outputTauG, outputL), aes(x = outputTauG, y = outputL)) + geom_point() + theme_laura() + # geom_path()
+  labs(x = TeX("$\\tau_G$"), y = TeX("$\\rho$")) # trace and density plot
+ggMarginal(gg, type = 'density', colour = '#41959E', fill = '#41959E') # 779997
+
+# Expected number of cases per genome ----
+# Long... that's why I wanted it inside the iterations... TODO
+# TODO test
+# TODO do for dim = 1
+subsetIterations <- finalIterations #sample(finalIterations, 200)
+subsetBlockG <- c(238, 395, 522) # dim3Cases from outbreak table... More than that would be crazy # temp_MAT32
+subsetG <- sort(unique(genomeForModels[clusterHighId %in% subsetBlockG, clusterLowId]))
+matrixPop <- aperm(array(pop, dim = c(numRegions, numWeeks, numSequences)), perm = c(2,1,3))
+sCasesU <- matrix(0, nrow = numDims[2], ncol = length(subsetIterations))
+eCasesU <- matrix(0, nrow = numDims[2], ncol = length(subsetIterations))
+sCasesG <- matrix(0, nrow = numDims[3], ncol = length(subsetIterations))
+eCasesG <- matrix(0, nrow = numDims[3], ncol = length(subsetIterations))
+sCasesAll <- array(0, dim = c(numDims[2], length(subsetG), length(subsetIterations)))
+eCasesAll <- array(0, dim = c(numDims[2], length(subsetG), length(subsetIterations)))
+for(it in 1:length(subsetIterations)){ # ~ 30s
+  matrixG <- aperm(array(outputG[,it], dim = c(numSequences, numWeeks, numRegions)), perm = c(2,3,1))
+  matrixS <- array(outputS[,it], dim = c(numWeeks, numRegions, numSequences))
+  matrixR <- aperm(array(outputR[,it], dim = c(numRegions, numWeeks, numSequences)), perm = c(2,1,3))
+  if(!1 %in% dimToInclude){
+    ttt <- cbind(1, storage$parameters$X[it][[1]])
+    ttt2 <- array(0, dim = numBlockDims)
+    ttt2[ttt] <- 1
+    matrixX <- array(ttt2[allToGroups], dim = c(numWeeks, numRegions, numSequences))
+  }else{
+    # TODO
+  }
+  if(dimBeta == 2){
+    matrixB <- aperm(array(outputB[jToGroups, it], dim = c(numRegions, numWeeks, numSequences)), perm = c(2,1,3))
+  }else if(dimBeta == 3){
+    matrixB <- aperm(array(outputB[kToGroups, it], dim = c(numSequences, numWeeks, numRegions)), perm = c(2,3,1))
+  }
+  matrixXBexp <- exp(matrixX*matrixB)
+  sCasesU[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG), 2, sum) # 3!!!!!!!!!!!
+  eCasesU[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp, 2, sum)
+  sCasesG[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG), 3, sum)
+  eCasesG[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp, 3, sum)
+  sCasesAll[,,it] <- (matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG))[,,subsetG]
+  eCasesAll[,,it] <- (matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp)[,,subsetG]
+} # Expect warnings
+dataToPlot <- rbind(data.table(k = 1:numDims[dimForPlot], cases = sapply(1:numDims[dimForPlot], function(kk) median(sCasesG[kk,])), type = "sporadic"),
+                    data.table(k = 1:numDims[dimForPlot], cases = sapply(1:numDims[dimForPlot], function(kk) median(eCasesG[kk,])), type = "total"),
+                    data.table(k = 1:numDims[dimForPlot], cases = apply(y, dimForPlot, sum), type = "observed"))
+tempOrderPlot <- dataToPlot[type == "sporadic", frank(cases, ties.method = "dense")]
+dataToPlot[, orderK := sapply(k, function(x) tempOrderPlot[x])]
+ggplot(dataToPlot[order(orderK)], aes(x = orderK, y = cases, colour = factor(type, levels = c("total", "sporadic", "observed")))) + geom_path() + theme_laura() +
+  labs(colour = "type") # k 418
+
+if(0){
+  plot(sCasesG[418,])
+  sum(y[,,418])
+  which.max(eCasesG[418,]) # it 290
+  
+  # for it 290
+  (matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp)[,,418]
+  which.max((matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp)[,,418]) # region 295
+  (matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp)[,295,418]
+  matrixXBexp[,295,418]
+  matrixX[,295,418]
+  matrixB[,295,418]
+  # one B is extremely large!
+  
+  # THEREFORE: change mean to meadian in loop above
+}
+
+# Outbreak table* ----
+# REQUIRES 5./Expected number of cases per genome with dimForPlot = 3 (just before)
+
+THRESHOLD <- 0.15
+outProbs[proba > THRESHOLD]
+casesForModels[probaOutbreak > THRESHOLD]
+
+setkey(casesForModels, idInDataInfo)
+setkey(dataInfoPostSOA, id)
+casesForModels[dataInfoPostSOA, received_date_format := received_date_format]
+setkey(casesForModels, LSOA11CD)
+setkey(dataLSOA, LSOA11CD)
+casesForModels[dataLSOA, LSOA11NM := LSOA11NM]
+setkey(casesForModels, idInDataInfo)
+setkey(dataAnnotatedList[[2]], id)
+casesForModels[dataAnnotatedList[[2]], ccStr := clonal_complex..MLST.]
+
+# -- WRITE down dim3Cases of chosen outbreaks and MODIFY subsetBlockG (opt.)
+# sum of the mean is the mean of the sum
+eCasesAll_col <- apply(eCasesAll, 1:2, mean)
+sCasesAll_col <- apply(sCasesAll, 1:2, mean)
+#e.g. eCasesAll_col[regionsForModels[region == 26, col], which(subsetG %in% genomeForModels[clusterHighId == 238, col])]
+casesForModels[probaOutbreak > THRESHOLD,
+               ecasesBlock := mapply(function(x, y) sum(eCasesAll_col[regionsForModels[region == x, col], which(subsetG %in% genomeForModels[clusterHighId == y, col])]),
+                                region, clusterHighId)]
+casesForModels[probaOutbreak > THRESHOLD,
+               scasesBlock := mapply(function(x, y) sum(sCasesAll_col[regionsForModels[region == x, col], which(subsetG %in% genomeForModels[clusterHighId == y, col])]),
+                                region, clusterHighId)]
+#casesForModels[, ecasesBlock := sum(ecases), idOutbreak]
+#casesForModels[, scasesBlock := sum(scases), idOutbreak]
+# --
+
+casesForModels[probaOutbreak > THRESHOLD][order(received_date_format)]
+# print
+casesForModels[probaOutbreak > THRESHOLD][order(received_date_format)][,.(sizeOutbreak, probaOutbreak, received_date_format, ccStr, LSOA11NM)]
+casesForModels[probaOutbreak > THRESHOLD][order(received_date_format)][,.(sizeOutbreak, probaOutbreak, received_date_format, ccStr, LSOA11NM, scasesBlock, ecasesBlock)]
+
+# Distance between clusters histogram* ----
+# Only requires the info in dirInputFile
+dataToPlot <- data.table(melt(distanceMatrixMCMC))[X1 < X2]
+plot(dataToPlot[order(value), value])
+ghist <- ggplot(dataToPlot[value < 1000]) + geom_histogram(aes(x = value, y = ..density..), breaks = seq(10,1287,10)) +
+  scale_x_continuous(limits = c(10,1000), breaks = c(10,seq(250,1000,250))) + theme_laura(15) +
+  theme(panel.grid.major = element_line(colour = "gray", size = 0.3), panel.grid.minor = element_line(colour = "gray", size = 0.1)) + # as in theme_laura2
+  labs(x = "distance")
+ghist#savePDF(ghist, fileName = "Plot30012020_01_38p12c5_18122019Input_HistClust", 8, 4) # warning
 
 # BORRAR!! ----
 
+plot(colSums(drop(y)), rowMeans(outputG))
+
+plot(table(distanceMatrixMCMC[distanceMatrixMCMC < 50 & distanceMatrixMCMC > 0]))
+
+plot(table(colSums(drop(y))))
+
+plot(1:50, exp(-seq(1,50,1)/mean(outputL))/mean(outputTauG))
+plot(1:50, exp(-seq(1,50,1)/mean(outputL))/100)
+
+xInput <- seq(-50,50,1)
+xCov <- exp(-abs(xInput)/50)/10 # 10:1 10:10 50:1  50:10
+#xCov <- exp(-abs(xInput)/mean(outputL))/mean(outputTauG)
+plot(xInput, rnorm(length(xInput), mean = 0, sd = xCov))
+
+
+# # 3/Prior-posterior hyperparameters/a
 gPos2 <- ggplot(dataToPlotPos, aes(x = x, fill = label, color = label)) +
   geom_density(data = dataToPlotPos[label == "posterior"], alpha = 0.3) +
   geom_line(aes(y = y)) + theme_laura() + labs(x = "", y = "density", color = "", fill = "")
 gPos2
-
 
 
 

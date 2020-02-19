@@ -12,7 +12,7 @@ initConstants <- function(ma = 0,
                        aB = 1,
                        bB = 0.5,
                        aP = 1,
-                       bP = 51,
+                       bP = ifelse(dimBeta != 123, numBlockDims[dimBeta] - 1, prod(numBlockDims)),
                        ifPlot = FALSE){
   constants <- list(ma = ma,
                  sa = sa,
@@ -119,12 +119,19 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
                       R.sigma = rep(1, numRegions),
                       S.sigma = rep(1, numWeeks),
                       G.sigma = rep(1, numSequences),
+                      B.sigma = NULL,
                       #B.sigma = matrix(1, nrow = numRegionsGroups, ncol = numSequenceGroups),
-                      B.sigma = rep(1, numBeta),
+                      #B.sigma = rep(1, numBeta),
                       l.sigma = 1,
                       ifPlot = FALSE,
                       configUpdates = list(ifAUpdate = 1, ifRUpdate = 1, ifSUpdate = 1, ifGUpdate = 1, ifBUpdate = 1, ifXUpdate = 1,
                                            ifPUpdate = 1, ifTauRUpdate = 1, ifTauSUpdate = 1, ifLTauGUpdate = 1)){
+  
+  if(is.null(B.sigma) & dimBeta == 123){
+    B.sigma <- array(1, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))
+  }else if(is.null(B.sigma) & !dimBeta == 123){
+    B.sigma = rep(1, numBeta)
+  }
   
   # Parameters and variables initialisation
   if(simulatedData == 0){
@@ -141,6 +148,9 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
                        #l = 3,
                        l = exp(rnorm(1, parametersVar1$l, parametersVar2$l))) # plotLogNorm
     #print(parameters$l)
+    if(dimBeta == 123){
+      parameters$B <- array(exp(rnorm(prod(numBlockDims), mean = parametersVar1$B, sd = parametersVar2$B)), dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))
+    }
     
     # Modify according to the dimensions included
     if(!1 %in% dimToInclude) parameters$S <- rep(0, numWeeks)
@@ -173,6 +183,10 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
                        tau.G = configUpdates$ifLTauGUpdate*exp(rnorm(1, parametersVar1$tG, parametersVar2$tG)) + (!configUpdates$ifLTauGUpdate)*simulatedParam$tau.G,
                        p = configUpdates$ifPUpdate*rbeta(1, shape1 = parametersVar1$p, shape2 = parametersVar2$p) + (!configUpdates$ifPUpdate)*simulatedParam$p, #plotBeta(1,100)
                        l = configUpdates$ifLTauGUpdate*exp(rnorm(1, parametersVar1$l, parametersVar2$l)) + (!configUpdates$ifLTauGUpdate)*simulatedParam$l) # plotLogNorm
+    if(dimBeta == 123){
+      parameters$B <- configUpdates$ifBUpdate*array(exp(rnorm(prod(numBlockDims), mean = parametersVar1$B, sd = parametersVar2$B)),
+                                                    dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups)) + (!configUpdates$ifBUpdate)*simulatedParam$B
+    }
     
     # ???
     #if(0){
@@ -261,6 +275,11 @@ createStorage <- function(config){
                             l = rep(0, numIterations),
                             scases = matrix(0, nrow = numWeeks, ncol = numIterations),
                             ecases = matrix(0, nrow = numWeeks, ncol = numIterations))
+  if(dimBeta == 123){
+    accept$B <- array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))
+    reject$B <- array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))
+    parameters.stored$B <- array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))
+  }
   storage <- list(accept = accept,
                   reject = reject,
                   parameters = parameters.stored)

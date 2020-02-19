@@ -90,8 +90,17 @@ getSpatialFn <- function(typ, size){
 # 10. Modify groupSequencesCore to indicate/remove duplicates, create colsDistanceMatrixGroupsNoDups
 # Content: groupSequencesCore$groupDupId colsDistanceMatrixGroupsNoDups
 # *Recall: column order in distanceMatrixGroups is given by groupSequencesCore$groupId
-groupSequencesCore[isDuplicate == FALSE, groupDupId := frank(groupId, ties.method = "dense")]
-colsDistanceMatrixGroupsNoDups <- groupSequencesCore[isDuplicate == FALSE, sort(unique(groupId))]
+#OXADD groupSequencesCore[isDuplicate == FALSE, groupDupId := frank(groupId, ties.method = "dense")]
+#OXADD colsDistanceMatrixGroupsNoDups <- groupSequencesCore[isDuplicate == FALSE, sort(unique(groupId))]
+
+# Adjustment OXADD: 18.12.2019 :)
+# Only include data in the spatial region
+# NOTE: groupDupId is like a groupChosenId, but it's too complicated to modify it
+colsDistanceMatrixGroupsNoDups <- groupSequencesCore[isDuplicate == FALSE &
+                                                       columnInDataAlleles %in% dataInfoPostSOA[isDuplicate == FALSE & LSOA11CD %in% chosenAreasOX$LSOACDs, columnInDataAlleles],
+                                                     sort(unique(groupId))]
+groupSequencesCore[isDuplicate == FALSE & columnInDataAlleles %in% dataInfoPostSOA[isDuplicate == FALSE & LSOA11CD %in% chosenAreasOX$LSOACDs, columnInDataAlleles],
+                   groupDupId := frank(groupId, ties.method = "dense")] # 
 
 # 8. Partition for k's and distance matrix for chosen clusters
 if(1){
@@ -99,7 +108,8 @@ if(1){
   # Created in: 38V2.R on the 18.11.2019 as in the following block of code
   # Content: hClustOut ddata cat(readme) exploreCutFn clusterInfoFn
   # NOTE that hClustCut has the same ordering as colsDistanceMatrixGroupsNoDups and groupToClusterTable$groupDupId
-  load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18112019_ClustersKInfo.RData")
+  #load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18112019_ClustersKInfo.RData")
+  load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18122019_ClustersKInfo_OX.RData") # Adjustment OXADD
   # hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups*
   # *added on the 05.12.2019 (forgotten to store link of genomes by mimstake (?))
 }else{
@@ -188,6 +198,7 @@ if(1){
                 distanceMatrixClusters = distanceMatrixClusters, numClustLow = numClustLow, numClustHigh = numClustHigh))
   }
   #save(hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups, file = "07_MixedModelsP2/RCode_201911/38V2_II_18112019_ClustersKInfo.RData")
+  #save(hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups, file = "07_MixedModelsP2/RCode_201911/38V2_II_18122019_ClustersKInfo_OX.RData")
 }
 
 # 11. Choose heighCutLow, heighCutHigh (exploration)
@@ -201,7 +212,8 @@ if(0){
   # Explore effect of cut height
   tempS <- sapply(seq(5,1000,5), function(cut) length(unique(cutree(hClustOut, h = cut))))
   plot(seq(5,1000,5), tempS)
-  exploreCutFn(heighCutLow = 50, heighCutHigh = 300, hClustOut)
+  exploreCutFn(heighCutLow = 10, heighCutHigh = 50, hClustOut) # 50 300
+  # The chosen heighCutLow and heighCutHigh must be modified in 38_00.R/1.
 }
 
 # III. Input for MCMC (for time/space/genome) ----
@@ -253,7 +265,9 @@ genomeForModels[, col := 1:numSequences]
 distanceMatrixClusters <- clusterInfoList$distanceMatrixClusters
 
 # __.5. Create casesForModels (as casesInfo in 36b.R/5.) ----
-casesForModels <- dataInfoPostSOA[isDuplicate == FALSE,# & numWeek_corrected <= minWeek + lengthBlockPeriod*numBlockPeriods - 1,
+casesForModels <- dataInfoPostSOA[isDuplicate == FALSE &
+                                    columnInDataAlleles %in% dataInfoPostSOA[isDuplicate == FALSE & LSOA11CD %in% chosenAreasOX$LSOACDs, columnInDataAlleles], # Adjustment OXADD
+                                  # & numWeek_corrected <= minWeek + lengthBlockPeriod*numBlockPeriods - 1,
                              .(id, columnInDataAlleles, numWeek_corrected, idInDataLSOA, received_date_nextFriday, LSOA11CD, MSOA11CD)]
 setnames(casesForModels, "id", "idInDataInfo")
 cat("Number of cases:", nrow(casesForModels))
@@ -278,10 +292,10 @@ pop <- regionsForModels[order(col), estimPop2015]
 # .Check
 sum(is.na(casesForModels$dim1Cases)) == 0 # can be false
 sum(is.na(casesForModels$dim2Cases)) == 0 # can be false
-sum(is.na(casesForModels$dim3Cases)) == 0
+sum(is.na(casesForModels$dim3Cases)) == 0 # can be false??
 range(casesForModels$dim1Cases, na.rm = T)
 range(casesForModels$dim2Cases, na.rm = T)
-range(casesForModels$dim3Cases)
+range(casesForModels$dim3Cases, na.rm = T)
 
 # __.6. Mapping to groups ----
 iToGroups <- weeksForModels[order(row), groupId] # length of numPeriods, max value is numBlockPeriods
@@ -321,6 +335,8 @@ if(!3 %in% dimToInclude){
   kToGroups <- 1
 }else{
   # Nothing to do supposedly
+  # Adjustment OXADD
+  casesForModels <- casesForModels[!is.na(dim3Cases)]
 }
 
 # III.7. MCMC input ----
@@ -376,9 +392,12 @@ listDims <- list(iToGroups, jToGroups, kToGroups)
 # ----
 inputForData <- list(simulatedData = simulatedData, dimToInclude = dimToInclude, lengthBlockPeriod = lengthBlockPeriod, dimBeta = dimBeta,
                      heighCutLow = heighCutLow, heighCutHigh = heighCutHigh, typeSpatial = typeSpatial, numClustSpatial = numClustSpatial)
+groupSequencesCore_chosen <- groupSequencesCore # 18.12.2019 :)
+groupSequencesCore_chosen[, groupChosenId := groupDupId]
 save(inputForData,
      simulatedData, dimToInclude, lengthBlockPeriod, dimBeta, heighCutLow, heighCutHigh, typeSpatial, numClustSpatial,
      weeksForModels, regionsForModels, genomeForModels, casesForModels,
+     groupSequencesCore_chosen,
      numSequences, numPeriods, numRegions, numBlockPeriods, numBlockRegions, numBlocksSequences,
      iToGroups, jToGroups, kToGroups,
      numBeta, pop,
@@ -386,7 +405,10 @@ save(inputForData,
      numDims, numBlockDims, listDims, allToGroups,
      y, distanceMatrixMCMC, matrixForGMRF_nb, matrixForGMRF,
      #file = "07_MixedModelsP2/RCode_201911/38_Files/38_01_21112019_MCMCInputTinis.RData")
-     file = "07_MixedModelsP2/RCode_201911/38_Files/38_01_21112019_SimulInputTinis.RData")
+     #file = "07_MixedModelsP2/RCode_201911/38_Files/38_01_21112019_SimulInputTinis.RData")
+     #file = "07_MixedModelsP2/RCode_201912/38_01_18122019_MCMCInput_GOX.RData")
+     #file = "007_MixedModelsP2/RCode_201912/38_01_06012020_MCMCInput_GOX2.RData")
+     file = "07_MixedModelsP2/RCode_201912/38_01_06012020_MCMCInput_GOX3.RData")
 
 
 

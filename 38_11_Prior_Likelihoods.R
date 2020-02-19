@@ -38,7 +38,7 @@ llS <- function(i, Si){
 
 # Parameter Bsigmaj ----
 lpriorB <- function(j, Bl){
-  value <- (constants$aB + 1)*log(Bl) - constants$bB*Bl
+  value <- (constants$aB - 1)*log(Bl) - constants$bB*Bl # 07.01.2020 (constants$aB + 1) was a BUG!
   return(value)
 }
 llB <- function(l, Bl){
@@ -49,6 +49,18 @@ llB <- function(l, Bl){
     value <- sum(y[,,kToGroups == l]*matrixX[,,kToGroups == l]*Bl - matrixPop[,,kToGroups == l]*exp(parameters$a)*matrixGexp[,,kToGroups == l]*
                    matrixSexp[,,kToGroups == l]*matrixRexp[,,kToGroups == l]*exp(matrixX[,,kToGroups == l]*Bl))
   }
+  return(value)
+}
+
+# Parameter Bsigmaijk block ----
+lpriorBijk <- function(i, j, k, Bijk){
+  value <- (constants$aB - 1)*log(Bijk) - constants$bB*Bijk
+  return(value)
+}
+llBijk <- function(i, j, k, Bijk){
+  value <- sum(y[iToGroups == i,jToGroups == j,kToGroups == k]*matrixX[iToGroups == i,jToGroups == j,kToGroups == k]*Bijk - matrixPop[iToGroups == i,jToGroups == j,kToGroups == k]*
+                 exp(parameters$a)*matrixGexp[iToGroups == i,jToGroups == j,kToGroups == k]*matrixSexp[iToGroups == i,jToGroups == j,kToGroups == k]*
+                 matrixRexp[iToGroups == i,jToGroups == j,kToGroups == k]*exp(matrixX[iToGroups == i,jToGroups == j,kToGroups == k]*Bijk))
   return(value)
 }
 
@@ -66,20 +78,23 @@ llR <- function(j, Rj){
 #' Prior for an informative l (gamma) and tauG
 lpriorLTauGBlock <- function(invMatrix, tau, l){
   #value <- 0.5*numSequences*log(tau) + 0.5*log(det(invMatrix)) - 0.5*tau*(t(parameters$G)%*%invMatrix%*%parameters$G) +
-  value <- 0.5*numSequences*log(tau) + 0.5*determinant.spam(invMatrix)$modulus - 0.5*tau*(t(parameters$G)%*%invMatrix%*%parameters$G) +
-    (constants$aG - 1)*log(tau) - constants$bG*tau + (constants$aL - 1)*log(l) - constants$bL*l
+  value <- 0.5*numSequences*log(tau) + 0.5*determinant(invMatrix, logarithm = T)$modulus - 0.5*tau*(t(parameters$G)%*%invMatrix%*%parameters$G) +
+    (constants$aG - 1)*log(tau) - constants$bG*tau + (constants$aL - 1)*log(l) - constants$bL*l # 22.01.2020 no determinant.spam (see 43.R)
   return(value)
 }
 
 # Build covariance matrix ----
 #' maternParam: if 0 the function returns the squared exponential. If not 0, it is the parameter defining the Matern function
 #' inputMatrix: if maternParam is 0, it is the squared of distances. If maternParam is not 0, ot is the matrix of distances
-deltaMatrixFn <- function(l, inputMatrix, maternParam){
+#' sqrInputMatrix (19.01.2020) squared of distance matrix
+deltaMatrixFn <- function(l, inputMatrix, sqrInputMatrix, maternParam){
   if(maternParam == 0){
-    value <- exp(-inputMatrix/(2*l^2))
+    value <- exp(-sqrInputMatrix/(2*l^2))
   }
   else if(maternParam == 1/2){
     value <- exp(-inputMatrix/l)
+  }else if(maternParam == 3/2){
+    value <- (1 + (sqrt(3)*inputMatrix/l))*exp(-sqrt(3)*inputMatrix/l)
   }else{
     warning("Wrong l choice")
   }
@@ -94,6 +109,13 @@ deltaMatrixFn <- function(l, inputMatrix, maternParam){
 #  }
 #  return(value)
 #}
+
+# 18.12.2019 :)
+# Overall likelihood
+lll <- function(){
+  value <- sum(y*(parameters$a + matrixG + matrixS + matrixR + matrixB*matrixX) - matrixPop*exp(parameters$a)*matrixGexp*matrixSexp*matrixRexp*matrixXBexp)
+  return(value)
+}
 
 # Old function to be removed ----
 #' Prior for an uninformative l

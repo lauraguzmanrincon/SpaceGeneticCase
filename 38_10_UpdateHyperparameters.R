@@ -14,8 +14,9 @@ if(config$ifLTauGUpdate && it > 20){ # ifLTauGUpdate    ifLTauGUpdate && it%%20 
     }
   }
   #deltaMatrixProposal <- deltaMatrixFn(proposalL, maternParameter) # + 0.5*diag(numSequences)
-  deltaMatrixProposal <- as.spam(deltaMatrixFn(proposalL, distanceMatrixMCMC, config$maternParameter) + 0.01*diag(numSequences))
-  invDeltaMatrixProposal <- as.spam(solve(deltaMatrixProposal)) # slow if very large l
+  deltaMatrixProposal <- as.spam(deltaMatrixFn(proposalL, distanceMatrixMCMC, sqrDistanceMatrix, config$maternParameter) + 0.01*diag(numSequences))
+  #invDeltaMatrixProposal <- as.spam(solve(deltaMatrixProposal)) # slow if very large l
+  invDeltaMatrixProposal <- AMatrix%*%solve(deltaMatrixProposal)%*%AMatrix # 22.01.2020 new precision matrix, no spam (see 43.R)
   
   # Tau update
   extraTerm <- 0.5*(t(parameters$G)%*%invDeltaMatrixProposal%*%parameters$G) # MUST be greater than 0
@@ -26,7 +27,7 @@ if(config$ifLTauGUpdate && it > 20){ # ifLTauGUpdate    ifLTauGUpdate && it%%20 
   # Accept/reject
   normConstantRatioLJump <- log(pnorm(parameters$l)) - log(pnorm(proposalL))
   larLT <- lpriorLTauGBlock(invDeltaMatrixProposal, proposalTau, proposalL) -
-    lpriorLTauGBlock(as.spam(invDeltaMatrix), parameters$tau.G, parameters$l) + normConstantRatioLJump
+    lpriorLTauGBlock(invDeltaMatrix, parameters$tau.G, parameters$l) + normConstantRatioLJump # 22.01.2020 no as.spam(invDeltaMatrix) (see 43.R)
   #temp <- as.spam(invDeltaMatrix)
   #0.5*determinant.spam(temp)$modulus - 0.5*proposalTau*(t(parameters$G)%*%temp%*%parameters$G)
   #0.5*determinant.spam(invDeltaMatrixProposal)$modulus - 0.5*proposalTau*(t(parameters$G)%*%invDeltaMatrixProposal%*%parameters$G)
@@ -38,6 +39,8 @@ if(config$ifLTauGUpdate && it > 20){ # ifLTauGUpdate    ifLTauGUpdate && it%%20 
     parameters$tau.G <- proposalTau
     storage$accept$l <- storage$accept$l + 1
     #sigmaJumps$l <- sigmaJumps$l*x # TODO ???
+    deltaMatrix <- deltaMatrixProposal # debug 18.12.2019 :)
+    invDeltaMatrix <- invDeltaMatrixProposal # debug 18.12.2019 :)
     cat("LT accepted ")
   } else {
     storage$reject$l <- storage$reject$l + 1

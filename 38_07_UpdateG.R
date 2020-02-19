@@ -34,7 +34,8 @@ if(config$ifGUpdate){
     cat("G updated single ")
   }else if(adaptTypeG == 2){
     # copied from code below on 18.07.2019
-    proposalG <- rmvnorm.spam(n = 1, Sigma = deltaMatrix/parameters$tau.G)[1,]
+    #proposalG <- rmvnorm.spam(n = 1, Sigma = deltaMatrix/parameters$tau.G)[1,]
+    proposalG <- rmvnorm.spam(n = 1, Q = invDeltaMatrix*parameters$tau.G)[1,] # 19.02.2020
   }
   
   
