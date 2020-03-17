@@ -56,7 +56,7 @@ if(config$ifSUpdate){
         muB <- seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockComplement]
         muC <- parameters$S[sBlockComplement]
         
-        muSample <- muA%*%muB%*%muC
+        muSample <- -muA%*%muB%*%muC
       }else{
         sBlockComplementL <- setdiff(1:max(sBlockIndexes), sBlockIndexes)
         sBlockComplementR <- setdiff(min(sBlockIndexes):numWeeks, sBlockIndexes)
@@ -67,7 +67,7 @@ if(config$ifSUpdate){
         muBR <- seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockComplementR]
         muCR <- parameters$S[sBlockComplementR]
         
-        muSample <- muA%*%((muBL%*%muCL) + (muBR%*%muCR))
+        muSample <- -muA%*%((muBL%*%muCL) + (muBR%*%muCR))
       }
       
       sigmaSample <- muA/parameters$tau.S
