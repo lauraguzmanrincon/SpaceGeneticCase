@@ -1,9 +1,11 @@
 # Requires: config, sigmaJumps, storage, parameters
 # I literally ignored II. and III.
 
-# 1: single updates.  2: block update
+# 1: single updates.  2: 'global' update.  3: block update.
 
-adaptTypeG <- 1
+#adaptTypeG <- 3
+adaptTypeG <- ifelse(it%%2, 3, 1)
+parameters$cutHeight <- 0 # only for adaptTypeG = 3 # 27.02.2020
 
 if(config$ifGUpdate){
   if(adaptTypeG == 1){
@@ -36,6 +38,65 @@ if(config$ifGUpdate){
     # copied from code below on 18.07.2019
     #proposalG <- rmvnorm.spam(n = 1, Sigma = deltaMatrix/parameters$tau.G)[1,]
     proposalG <- rmvnorm.spam(n = 1, Q = invDeltaMatrix*parameters$tau.G)[1,] # 19.02.2020
+  }else if(adaptTypeG == 3){
+    # IV. Block update as in Knorr-Held,1999 and Fahrmeir,2001
+    # This code was constructed in sandbox 45.R/2.
+    
+    # Random cut
+    # treeCuts has three levels: original groups (groupDupId), low group (dim3Cases), and cut clusters (cutClust)
+    #cutHeight <- sample(10:130, size = 1, replace = FALSE)
+    cutHeight <- sample(10:1000, size = 1, replace = FALSE)
+    treeCuts <- data.table(groupDupId = 1:length(hClustOut$order), cutClust = cutree(hClustOut, h = cutHeight))
+    # Merge cut with dimension (as in 1.b.)
+    temp <- casesForModels[, .N, .(groupDupId, dim3Cases)]
+    setkey(treeCuts, groupDupId)
+    setkey(temp, groupDupId)
+    treeCuts[temp, dim3Cases := dim3Cases]
+    #treeCuts[, .N, .(cutClust, dim3Cases)]
+    
+    listBlocks <- treeCuts[, .N, cutClust][order(cutClust)]
+    listBlocks[, id := .I]
+    cutToDim3 <- treeCuts[, .N, .(cutClust, dim3Cases)]
+    
+    parameters$cutHeight <- cutHeight # 27.02.2020
+    
+    # Blocks loop
+    # K = invDeltaMatrix = AMatrix%*%solve(deltaMatrixProposal)%*%AMatrix that is already computed at this point
+    # Extract indexes of the chosen block (clustIndex): dim3ClusterIndexes
+    # Compute solve(K[indexes,indexes]), K[indexes,-indexes], G[-indexes]
+    # Compute mean and covariance of prior conditional
+    # Propose a jump from prior conditional
+    # Compute acceptance ratio using the likelihood only
+    # Draw random number to accept/reject
+    # Accept/reject
+    for(clustIndex in 1:nrow(listBlocks)){
+      # Note that for blocks of size 1, this is not equivalent as single RW jumps, since conditional updates depend on the neighbours state
+      cutCluster <- listBlocks[id == clustIndex, cutClust]
+      dim3ClusterIndexes <- cutToDim3[cutClust == cutCluster, dim3Cases] # TODO should be ordered? don't think so...
+      dim3ClusterComplement <- setdiff(1:numDims[3], dim3ClusterIndexes)
+      
+      muA <- solve(invDeltaMatrix[dim3ClusterIndexes, dim3ClusterIndexes]) # TODO invertible? Prove!
+      muB <- invDeltaMatrix[dim3ClusterIndexes, dim3ClusterComplement]
+      muC <- parameters$G[dim3ClusterComplement]
+      
+      muSample <- muA%*%muB%*%muC
+      sigmaSample <- muA/parameters$tau.G
+      proposalGKnorr <- mvrnorm(n = 1, mu = muSample, Sigma = sigmaSample)
+      
+      larGKnorr <- llGKnorr(dim3ClusterIndexes, proposalGKnorr) - llGKnorr(dim3ClusterIndexes, parameters$G[dim3ClusterIndexes])
+      
+      u <- runif(1)
+      if (log(u) < larGKnorr) {
+        parameters$G[dim3ClusterIndexes] <- proposalGKnorr
+        storage$accept$GcondUp[dim3ClusterIndexes] <- storage$accept$GcondUp[dim3ClusterIndexes] + 1
+        #NO?sigmaJumps$G[dim3ClusterIndexes] <- sigmaJumps$G[dim3ClusterIndexes]*x
+        matrixG[,,dim3ClusterIndexes] <- proposalGKnorr
+        matrixGexp[,,dim3ClusterIndexes] <- exp(proposalGKnorr)
+      } else {
+        storage$reject$GcondUp[dim3ClusterIndexes] <- storage$reject$GcondUp[dim3ClusterIndexes] + 1
+        #NO?sigmaJumps$G[dim3ClusterIndexes] <- sigmaJumps$G[dim3ClusterIndexes]*x^(-0.7857)
+      }
+    }
   }
   
   

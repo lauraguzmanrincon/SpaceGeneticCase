@@ -113,8 +113,8 @@ initConfig <- function(numIterations = 100,
 #' parametersVar1: mean
 #' parametersVar2: sd
 #' Note: configUpdates should be the output of initConfig() instead of using the default 13.12.2019
-initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, tR = 3.5, tS = 3.5, tG = 0.5, p = 1, l = 1),
-                      parametersVar2 = list(a = 1, R = 1, S = 1, G = 1, B = 1, tR = 1, tS = 1, tG = 0.15, p = 100, l = 1),
+initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, tR = 3.5, tS = 3.5, tG = 0.5, p = 1, l = 2.5),
+                      parametersVar2 = list(a = 1, R = 1, S = 1, G = 1, B = 1, tR = 1, tS = 1, tG = 0.15, p = 100, l = 0.8),
                       a.sigma = 1,
                       R.sigma = rep(1, numRegions),
                       S.sigma = rep(1, numWeeks),
@@ -146,8 +146,11 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
                        tau.G = exp(rnorm(1, parametersVar1$tG, parametersVar2$tG)),
                        p = rbeta(1, shape1 = parametersVar1$p, shape2 = parametersVar2$p), #plotBeta(1,100)
                        #l = 3,
-                       l = exp(rnorm(1, parametersVar1$l, parametersVar2$l))) # plotLogNorm
+                       l = exp(rnorm(1, parametersVar1$l, parametersVar2$l)), # plotLogNorm
+                       cutHeight = 0, # 27.02.2020
+                       sBlockSize = 0) # 17.03.2020
     #print(parameters$l)
+    parameters$G <- parameters$G - mean(parameters$G) # update G inititalisation 26.02.2020
     if(dimBeta == 123){
       parameters$B <- array(exp(rnorm(prod(numBlockDims), mean = parametersVar1$B, sd = parametersVar2$B)), dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))
     }
@@ -183,6 +186,7 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
                        tau.G = configUpdates$ifLTauGUpdate*exp(rnorm(1, parametersVar1$tG, parametersVar2$tG)) + (!configUpdates$ifLTauGUpdate)*simulatedParam$tau.G,
                        p = configUpdates$ifPUpdate*rbeta(1, shape1 = parametersVar1$p, shape2 = parametersVar2$p) + (!configUpdates$ifPUpdate)*simulatedParam$p, #plotBeta(1,100)
                        l = configUpdates$ifLTauGUpdate*exp(rnorm(1, parametersVar1$l, parametersVar2$l)) + (!configUpdates$ifLTauGUpdate)*simulatedParam$l) # plotLogNorm
+    if(configUpdates$ifGupdate) parameters$G <- parameters$G - mean(parameters$G) # update G inititalisation 26.02.2020
     if(dimBeta == 123){
       parameters$B <- configUpdates$ifBUpdate*array(exp(rnorm(prod(numBlockDims), mean = parametersVar1$B, sd = parametersVar2$B)),
                                                     dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups)) + (!configUpdates$ifBUpdate)*simulatedParam$B
@@ -238,6 +242,7 @@ createStorage <- function(config){
                  S = rep(0, numWeeks),
                  ScondUp = rep(0, numWeeks),
                  G = rep(0, numSequences),
+                 GcondUp = rep(0, numSequences),
                  X = array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups)),
                  ##B = matrix(0, nrow = numRegionsGroups, ncol = numSequenceGroups),
                  B = rep(0, numBeta),
@@ -252,6 +257,7 @@ createStorage <- function(config){
                  S = rep(0, numWeeks),
                  ScondUp = rep(0, numWeeks),
                  G = rep(0, numSequences),
+                 GcondUp = rep(0, numSequences),
                  X = array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups)),
                  ##B = matrix(0, nrow = numRegionsGroups, ncol = numSequenceGroups),
                  B = rep(0, numBeta),
@@ -273,8 +279,10 @@ createStorage <- function(config){
                             tau.G = rep(0, numIterations),
                             p = rep(0, numIterations),
                             l = rep(0, numIterations),
-                            scases = matrix(0, nrow = numWeeks, ncol = numIterations),
-                            ecases = matrix(0, nrow = numWeeks, ncol = numIterations))
+                            #scases = matrix(0, nrow = numWeeks, ncol = numIterations),
+                            #ecases = matrix(0, nrow = numWeeks, ncol = numIterations),
+                            cutHeight = rep(0, numIterations), # 27.02.2020
+                            sBlockSize = rep(0, numIterations)) # 17.03.2020
   if(dimBeta == 123){
     accept$B <- array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))
     reject$B <- array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))

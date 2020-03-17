@@ -77,13 +77,42 @@ nameFilesOut <- "2601202001_Tinis_SE_Constraint" # tauG: 1,0.01 rho: 10,0.2 r: 1
 nameFilesOut <- "2601202001_Tinis_MAT32_Constraint" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # 798341
 dirInputFiles <- "07_MixedModelsP2/RCode_201912/"
 dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_202001/"
+# 26.02.2020 - 03.03.2020 # CURRENT ONE: 03032020
+nameFiles <- "18122019_MCMCInput_GOX"
+nameFilesOut <- "2602202001_Tinis_MAT12_GBlock" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # 798312 (SE) 829851 (MAT12)
+nameFilesOut <- "2602202001_Tinis_MAT12_GBlock_rho" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # MAT12 with rho # 832145
+nameFilesOut <- "0203202001_Tinis_MAT12_GBlock_rho_two" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # MAT12 with rho and two types of G update # 832635
+nameFilesOut <- "0203202002_Tinis_MAT12_GBlock_rho_two" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # MAT12 with rho and two types of G update # 832854
+nameFilesOut <- "0303202001_Tinis_MAT12_GBlock_rho_two" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # MAT12 with rho and two types of G update # 833184-6
+nameFilesOut <- "0303202001_Tinis_MAT32_GBlock_rho_two" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # MAT12 with rho and two types of G update # 833892
+nameFilesOut <- "0303202001_Tinis_SE_GBlock_rho_two" # tauG: 1,0.01 rho: 10,0.2 r: 10/50* # MAT12 with rho and two types of G update # (833897 -894 -979 cholesky) # 834267 NO SPAM
+nameFilesOut <- c("0303202001_Tinis_MAT12_GBlock_rho_two", "0303202002_Tinis_MAT12_GBlock_rho_two", "0303202003_Tinis_MAT12_GBlock_rho_two")
+dirInputFiles <- "07_MixedModelsP2/RCode_201912/"
+dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_202002/"
+# 05.03.2020 TG! 17.03.2020 with S block update
+dirInputFiles <- "07_MixedModelsP2/RCode_202002/"
+nameFiles <- "05032020_MCMCInput_TGOX"
+nameFilesOut <- "0503202001_TinisTG_MAT12" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 # 835854
+nameFilesOut <- "0503202001_TinisTG_MAT12_500it" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 # 835892 # no S block update...
+dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_202002/"
+#
+nameFilesOut <- "1703202001_TinisTG_MAT12_500it_Sblock" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 # 855373
+nameFilesOut <- "1703202001_TinisTG_MAT12_1000it_Sblock" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 # NOT YET
+dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_202003/"
+# 14.03.2020 SG-cuts
+dirInputFiles <- "07_MixedModelsP2/RCode_201912/"
+nameFiles <- "18122019_MCMCInput_GOX"
+nameFilesOut <- "1403202001_TinisSG_MAT12_1000it_cuts" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 # 854452
+dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_202003/"
 # Other parameters
 simulatedDataRes <- 0
+multipleOutFiles <- length(nameFilesOut) != 1 # the multiple outputs shpuld be identical, just different chains # supported only for non-simulated runs
 typ <- "OX"
 dirInputFile <- paste0(dirInputFiles, "38_01_", nameFiles, ".RData")
 load(dirInputFile) # ...
 if(simulatedDataRes == 0){
-  dirOutputFile <- paste0(dirOutputFiles, "38_00_", nameFilesOut, ".RData")
+  # Load MCMC output file. If multiple sources, it loads the first one as a base
+  dirOutputFile <- paste0(dirOutputFiles, "38_00_", ifelse(multipleOutFiles, nameFilesOut[1], nameFilesOut), ".RData")
   load(dirOutputFile) # constants, config, out, storage, adaptive, it, runningTime
 }else{
   #nameOutput <- "38_00_21112019_SimulOutputTinis_a.RData"
@@ -124,47 +153,88 @@ if(0){
 
 # 2. Build data from MCMC output for visualisations ----
 # a. Traces
-#finalIterations <- 1001:5000
-finalIterations <- (config$burnIn + 1):config$numIterations
-#finalIterations <- 1:75
-#finalIterations <- 1:config$numIterations
-#finalIterations <- 1:(it - 1)
 sizePlot <- 15
 simulatedDataRes <- 0
 
-# Check output
-#gIndices <- union((freqGUpdate != 1)*which((finalIterations)%%freqGUpdate == 1), (freqGUpdate == 1)*(finalIterations))
-outputA <- storage$parameters$a[finalIterations]
-outputG <- storage$parameters$G[,finalIterations]
-outputS <- array(storage$parameters$S[,finalIterations], dim = c(numPeriods, length(finalIterations))) # just in case is of size 1
-outputR <- array(storage$parameters$R[,finalIterations], dim = c(numRegions, length(finalIterations)))
-if(dimBeta != 123) outputB <- storage$parameters$B[,finalIterations]
-if(dimBeta == 123) outputB <- storage$parameters$B/config$numIterations
-outputTauG <- storage$parameters$tau.G[finalIterations]
-outputTauS <- storage$parameters$tau.S[finalIterations]
-outputTauR <- storage$parameters$tau.R[finalIterations]
-outputP <- storage$parameters$p[finalIterations]
-outputL <- storage$parameters$l[finalIterations]
-temp <- lapply(finalIterations, function(x) cbind(x, storage$parameters$X[[x]]))
-outputX <- as.data.table(do.call(rbind, temp)) # Excpect a warning for each iteration without X's
-setnames(outputX, c("x"), c("it"))
-#setnames(outputX, c("x","row","col"), c("it","week","region"))
-nrow(outputX)/(prod(numBlockDims)*length(finalIterations))
+outputAlist <- vector("list", 3)
+outputGlist <- vector("list", 3)
+outputSlist <- vector("list", 3)
+outputRlist <- vector("list", 3)
+outputBlist <- vector("list", 3)
+outputTauGlist <- vector("list", 3)
+outputTauSlist <- vector("list", 3)
+outputTauRlist <- vector("list", 3)
+outputPlist <- vector("list", 3)
+outputLlist <- vector("list", 3)
+outputXlist <- vector("list", 3)
+for(ii in 1:length(nameFilesOut)){
+  paste0(dirOutputFiles, "38_00_", ifelse(multipleOutFiles, nameFilesOut[ii], nameFilesOut), ".RData")
+  
+  #finalIterations <- 1001:5000
+  finalIterations <- (config$burnIn + 1):config$numIterations
+  iterationsToPlot <- 1:length(finalIterations)
+  #finalIterations <- 1:75
+  #finalIterations <- 1:config$numIterations
+  #finalIterations <- 1:(it - 1)
+  
+  # Check output
+  #gIndices <- union((freqGUpdate != 1)*which((finalIterations)%%freqGUpdate == 1), (freqGUpdate == 1)*(finalIterations))
+  outputAlist[[ii]] <- storage$parameters$a[finalIterations]
+  outputGlist[[ii]] <- storage$parameters$G[,finalIterations]
+  outputSlist[[ii]] <- array(storage$parameters$S[,finalIterations], dim = c(numPeriods, length(finalIterations))) # just in case is of size 1
+  outputRlist[[ii]] <- array(storage$parameters$R[,finalIterations], dim = c(numRegions, length(finalIterations)))
+  if(dimBeta != 123) outputBlist[[ii]] <- storage$parameters$B[,finalIterations]
+  if(dimBeta == 123) outputB <- storage$parameters$B/config$numIterations
+  outputTauGlist[[ii]] <- storage$parameters$tau.G[finalIterations]
+  outputTauSlist[[ii]] <- storage$parameters$tau.S[finalIterations]
+  outputTauRlist[[ii]] <- storage$parameters$tau.R[finalIterations]
+  outputPlist[[ii]] <- storage$parameters$p[finalIterations]
+  outputLlist[[ii]] <- storage$parameters$l[finalIterations]
+  temp <- lapply(finalIterations, function(x) cbind(x, storage$parameters$X[[x]]))
+  outputXlist[[ii]] <- as.data.table(do.call(rbind, temp)) # Excpect a warning for each iteration without X's
+  setnames(outputXlist[[ii]], c("x"), c("it"))
+  #setnames(outputX, c("x","row","col"), c("it","week","region"))
+  nrow(outputXlist[[ii]])/(prod(numBlockDims)*length(finalIterations))
+}
+outputA <- do.call(c, outputAlist)
+outputG <- do.call(cbind, outputGlist)
+outputS <- do.call(cbind, outputSlist)
+outputR <- do.call(cbind, outputRlist)
+outputB <- do.call(cbind, outputBlist)
+outputTauG <- do.call(c, outputTauGlist)
+outputTauS <- do.call(c, outputTauSlist)
+outputTauR <- do.call(c, outputTauRlist)
+outputP <- do.call(c, outputPlist)
+outputL <- do.call(c, outputLlist)
+outputX <- do.call(rbind, outputXlist)
+totalIterations <- length(outputA)
 
 # b. Outbreak info
-THRESHOLD <- 0.1
-outProbs <- outputX[, .N/length(finalIterations), .(row, col)]
+THRESHOLD <- 0.15
+outProbs <- outputX[, .N/totalIterations, .(row, col)]
 outProbs[, id := .I]
 setnames(outProbs, "V1", "proba")
 outProbs[, sizeB := rowMeans(outputB)[col]]
 
-setkey(casesForModels, dim2Cases)
-setkey(regionsForModels, col)
-casesForModels[regionsForModels, region := region]
-setkeyv(casesForModels, c("region", "clusterHighId"))
-setkeyv(outProbs, c("row", "col"))
-casesForModels[outProbs, c("idOutbreak", "probaOutbreak") := .(id, proba)]
-casesForModels[, sizeOutbreak := .N, idOutbreak]
+# TODO make it short!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+if(!1 %in% dimToInclude){
+  setkey(casesForModels, dim2Cases)
+  setkey(regionsForModels, col)
+  casesForModels[regionsForModels, region := region]
+  setkeyv(casesForModels, c("region", "clusterHighId"))
+  setkeyv(outProbs, c("row", "col"))
+  casesForModels[outProbs, c("idOutbreak", "probaOutbreak") := .(id, proba)]
+  casesForModels[, sizeOutbreak := .N, idOutbreak]
+}else{
+  setkey(casesForModels, dim3Cases)
+  setkey(weeksForModels, row)
+  casesForModels[weeksForModels, groupId := groupId]
+  setkeyv(casesForModels, c("dim1Cases", "clusterHighId")) # TODO correct wrong!!!!!!!!!!!!!!!!!!!!!!!
+  setkeyv(outProbs, c("row", "col"))
+  casesForModels[outProbs, c("idOutbreak", "probaOutbreak") := .(id, proba)]
+  casesForModels[, sizeOutbreak := .N, idOutbreak]
+}
+
 
 # 3. MCMC output: quick chain visualisation to overview MCMC ----
 # Requires 0. 1. 2.
@@ -206,31 +276,31 @@ sampleGPlot <- sample(1:numSequences, 1)
 #  geom_hline(yintercept = ifelse(simulatedDataRes, simulatedParam$G[sampleGPlot], NaN))
 
 rm(g0,g1,g2,g3,g4,g5,g6,g7,g8,g9,g10)
-g0 <- ggplot(data.table(it = finalIterations, value = outputA),
+g0 <- ggplot(data.table(it = finalIterations, value = outputA[iterationsToPlot]),
              aes(x = it, y = value)) + geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $\\alpha$")) +
   geom_hline(yintercept = ifelse(simulatedDataRes, simulatedParam$a, NaN))
-g1 <- ggplot(data.table(it = finalIterations, value = outputTauG),
+g1 <- ggplot(data.table(it = finalIterations, value = outputTauG[iterationsToPlot]),
              aes(x = it, y = value)) + geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $\\tau_G$"))
-g2 <- ggplot(data.table(it = finalIterations, value = outputTauS),
+g2 <- ggplot(data.table(it = finalIterations, value = outputTauS[iterationsToPlot]),
              aes(x = it, y = value)) + geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $\\tau_R$"))
-g9 <- ggplot(data.table(it = finalIterations, value = outputTauR),
+g9 <- ggplot(data.table(it = finalIterations, value = outputTauR[iterationsToPlot]),
              aes(x = it, y = value)) + geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $\\tau_U$"))
-g3 <- ggplot(data.table(it = finalIterations, value = outputP),
+g3 <- ggplot(data.table(it = finalIterations, value = outputP[iterationsToPlot]),
              aes(x = it, y = value)) + geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $p$")) +
   #geom_hline(yintercept = ifelse(simulatedDataRes, sum(simulatedParam$X)/prod(dim(simulatedParam$X)), NaN))
   geom_hline(yintercept = ifelse(simulatedDataRes, simulatedParam$p, NaN))
-g4 <- ggplot(data.table(it = finalIterations, value = outputS[sampleSPlot,]), aes(x = it, y = value)) +
+g4 <- ggplot(data.table(it = finalIterations, value = outputS[sampleSPlot, iterationsToPlot]), aes(x = it, y = value)) +
   geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $R_j$")) +
   geom_hline(yintercept = ifelse(simulatedDataRes, simulatedParam$S[sampleSPlot], NaN))
-g10 <- ggplot(data.table(it = finalIterations, value = outputR[sampleRPlot,]), aes(x = it, y = value)) +
+g10 <- ggplot(data.table(it = finalIterations, value = outputR[sampleRPlot, iterationsToPlot]), aes(x = it, y = value)) +
   geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $U_j$")) +
   geom_hline(yintercept = ifelse(simulatedDataRes, simulatedParam$R[sampleRPlot], NaN))
-g5 <- ggplot(data.table(it = finalIterations, value = outputB[sampleBPlot,]), aes(x = it, y = value)) +
+g5 <- ggplot(data.table(it = finalIterations, value = outputB[sampleBPlot, iterationsToPlot]), aes(x = it, y = value)) +
   geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $B_k$")) +
   geom_hline(yintercept = ifelse(simulatedDataRes, simulatedParam$B[sampleBPlot], NaN))
-g6 <- ggplot(data.table(it = finalIterations, value = outputL),
+g6 <- ggplot(data.table(it = finalIterations, value = outputL[iterationsToPlot]),
              aes(x = it, y = value)) + geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $\\rho$"))
-g7 <- ggplot(data.table(it = finalIterations, value = outputG[sampleGPlot,]), aes(x = it, y = value)) +
+g7 <- ggplot(data.table(it = finalIterations, value = outputG[sampleGPlot, iterationsToPlot]), aes(x = it, y = value)) +
   geom_point() + theme_laura(size = sizePlot) + labs(x = "iteration", y = TeX("trace of $G_k$")) +
   geom_hline(yintercept = ifelse(simulatedDataRes, simulatedParam$G[sampleGPlot], NaN))
 g8 <- ggplot(outputX[, .N/prod(numBlockDims), by = .(it)], aes(x = it, y = V1)) +
@@ -238,10 +308,12 @@ g8 <- ggplot(outputX[, .N/prod(numBlockDims), by = .(it)], aes(x = it, y = V1)) 
   geom_hline(yintercept = ifelse(simulatedDataRes, mean(simulatedParam$X), NaN))
 if(2 %in% dimToInclude & 3 %in% dimToInclude){
   #multiplot(g4,g10,g7,g5,g0, g2,g9,g1,g6,g3, cols = 2) # Sj Rj Gk Bk a // tauS tauR tauG ro p
-  multiplot(g10,g7,g5,g0, g9,g1,g6,g3, cols = 2) # Sj Rj Gk Bk a // tauS tauR tauG ro p
+  multiplot(g10,g7,g5,g0, g9,g1,g6,g3, cols = 2) # Rj Gk Bk a // tauR tauG ro p
   #g8
   #g3
   if(dimBeta == 123) multiplot(g10,g7,ggplot(),g0, g9,g1,g6,g3, cols = 2) 
+}else if(1 %in% dimToInclude & 3 %in% dimToInclude){
+  multiplot(g4,g7,g5,g0, g2,g1,g6,g3, cols = 2) # Sj Gk Bk a // tauS tauG ro p
 }
 #savePDF(multiplot(g10,g7,g5,g0, g9,g1,g6,g3, cols = 2), "Plot25112019_01_MCMCoutput_Real", 8, 10)#12)
 #savePDF(multiplot(g4,g7,g5,g0,g2,g1,g6,g3, cols = 2), "Plot25112019_01_MCMCoutput_Real", 8, 10)#12)
@@ -372,28 +444,31 @@ if(config$maternParameter == 1/2){
 # Requires: 0. 1. 2.
 # Plot traces* ----
 # copied and adapted from 36d_V2.R/9.Traces
-#sampleSPlot <- sample(1:numWeeks, 1)
+sampleSPlot <- sample(1:numWeeks, 1)
 sampleRPlot <- sample(1:numRegions, 1)
 sampleBPlot <- sample(1:numRegionsGroups, 1)
 sampleGPlot <- sample(1:numSequences, 1)
 sampleGPlot
-plotTraces <- rbind(data.table(id = 1, variable = "tau[U]", iteration = 1:length(finalIterations), chain = 1, value = outputTauR),
-                    data.table(id = 2, variable = "tau[G]", iteration = 1:length(finalIterations), chain = 1, value = outputTauG),
-                    data.table(id = 3, variable = "p", iteration = 1:length(finalIterations), chain = 1, value = outputP),
-                    data.table(id = 5, variable = "U[i]", iteration = 1:length(finalIterations), chain = 1, value = outputR[sampleRPlot,]),
-                    data.table(id = 4, variable = "G[k]", iteration = 1:length(finalIterations), chain = 1, value = outputG[sampleGPlot,]),
-                    #data.table(id = 4, variable = "R[t]", iteration = 1:length(finalIterations), chain = 1, value = outputR[sampleRPlot,]),
+plotTraces <- rbind(data.table(id = 2, variable = "tau[G]", iteration = 1:length(finalIterations), chain = 1, value = outputTauG[iterationsToPlot]),
+                    #data.table(id = 1, variable = "tau[U]", iteration = 1:length(finalIterations), chain = 1, value = outputTauR[iterationsToPlot]), # SG
+                    data.table(id = 2, variable = "tau[R]", iteration = 1:length(finalIterations), chain = 1, value = outputTauS[iterationsToPlot]), # TG
+                    data.table(id = 3, variable = "p", iteration = 1:length(finalIterations), chain = 1, value = outputP[iterationsToPlot]),
+                    #data.table(id = 5, variable = "U[i]", iteration = 1:length(finalIterations), chain = 1, value = outputR[sampleRPlot, iterationsToPlot]), # SG
+                    data.table(id = 4, variable = "G[k]", iteration = 1:length(finalIterations), chain = 1, value = outputG[sampleGPlot, iterationsToPlot]),
+                    data.table(id = 4, variable = "R[t]", iteration = 1:length(finalIterations), chain = 1, value = outputS[sampleRPlot, iterationsToPlot]), # TG
                     #data.table(id = 1, variable = "Xjk", melt(epiclustR:::ssapply(modTr, epiclustR:::extract_variable, "X")[17,40,,])),
-                    data.table(id = 6, variable = "B[sigma]", iteration = 1:length(finalIterations), chain = 1, value = outputB[sampleBPlot,]))
+                    data.table(id = 6, variable = "B[sigma]", iteration = 1:length(finalIterations), chain = 1, value = outputB[sampleBPlot, iterationsToPlot]))
 plotTraces[, variableFc := factor(variable, levels = unique(plotTraces[order(id), variable]))]
 # .Plot traces
 gtr <- ggplot(plotTraces, aes(x = iteration, y = value, colour = factor(chain))) +
   facet_grid(variableFc ~ ., scales = "free_y", labeller = label_parsed) + geom_path() + theme_laura(16) +
   scale_color_manual(values = c("#003B36", "#E98A15", "#59114D")) + labs(x = "iteration", y = "", colour = "chain") +
   theme(strip.background = element_rect(fill = NA, colour = "gray90"), strip.text.y = element_text(angle = 0)) +
-  scale_x_continuous(breaks = c(config$burnIn, seq(1000, config$numIterations, 1000)))
+  scale_x_continuous(breaks = c(config$burnIn, seq(1000, config$numIterations, 1000))) # possible ERROR here
 gtr#savePDF(gtr, fileName = "Plot17102019_02_36d_Traces", 8, 7)
 #savePDF(gtr, fileName = "Plot05122019_02_38p12c4_0312201901_Tinis_OX_Traces", 8, 7)
+#savePDF(gtr, fileName = "Plot06032020_11_38p12c4_05032020_Tinis_OXTG_Traces_noconvergence", 8, 7)
+#savePDF(gtr, fileName = "Plot06032020_12_38p12c4_05032020_Tinis_OXTG_Traces_noconvergence_condUp", 8, 7)
 
 # 5. MCMC output: results visualisation ----
 # Requires: 0. 1. 2.
@@ -402,7 +477,12 @@ gtr#savePDF(gtr, fileName = "Plot17102019_02_36d_Traces", 8, 7)
 gThr <- ggplot(data.table(x = 1:nrow(outProbs), p = sort(outProbs$proba)), aes(x = x, y = p)) + geom_point() + theme_laura(size = 16) +
   labs(x = TeX("$X_{\\sigma(i),\\xi(k)}$"), y = "probability of outbreak") + scale_x_continuous(breaks = c(1,5000,10000,nrow(outProbs)), labels = rep("", 4)) +
   geom_hline(yintercept = THRESHOLD, linetype = 2, colour = "gray50")
-gThr#savePDF(gThr, fileName = "Plot05122019_01_33p12c5_0312201901_Tinis_OX_outP", 6, 4)
+#savePDF(gThr, fileName = "Plot05122019_01_33p12c5_0312201901_Tinis_OX_outP", 6, 4)
+gThr <- ggplot(data.table(x = 1:nrow(outProbs), p = sort(outProbs$proba)), aes(x = x, y = p)) + geom_point() + theme_laura(size = 16) +
+  labs(x = TeX("Block $\\sigma(i)\\xi(k)$"), y = "probability of outbreak") +
+  scale_x_continuous(breaks = c()) +
+  geom_hline(yintercept = THRESHOLD, linetype = 2, colour = "gray50")
+gThr#savePDF(gThr, fileName = "Plot06032020_01_33p12c5_0303202099_Tinis_OX_outP", 8, 5.5)
 
 #ggplot(outputX[, .N, by = .(row, col)][N>50], aes(x = col, y = row, color = N)) + geom_point() + theme_laura()
 
@@ -427,6 +507,7 @@ gTOut#savePDF(gThr, fileName = "Plot05122019_02_33c8_0312201901_Tinis_OX_outP", 
 #savePDF(gTOut, fileName = "Plot05122019_05_38p12c4_0312201901_Tinis_OX_Traces", 8, 7)
 #savePDF(gTOut, fileName = "Plot19122019_05_38p12c4_1812201901_Local_OX_Traces", 8, 7)
 #savePDF(gTOut, fileName = "Plot19022020_04_38p12c4_2601202002_M12_TimeComp", 8, 5.5)
+#savePDF(gTOut, fileName = "Plot06032020_02_38p12c4_0303202099_M12_TimeComp", 8, 5.5)
 
 # Plot splitstree TODO ----
 distObj <- as.dist(distanceMatrixMCMC)
@@ -544,11 +625,58 @@ spatialInfo[order(col), risk025 := apply(outputR, 1, quantile, 0.025)]
 spatialInfo[order(col), risk975 := apply(outputR, 1, quantile, 0.975)]
 spatialInfo[order(col), relRisk := apply(exp(outputR), 1, mean)]
 
-tempQuants <- quantile(abs(log(spatialInfo$relRisk)), c(1/9,3/9,5/9,7/9,9/9))
+# OLD VERSION before 17.03.2020
+if(0){
+  tempQuants <- quantile(abs(log(spatialInfo$relRisk)), c(1/9,3/9,5/9,7/9,9/9))
+  # (04.01.2020 correction: better max label and avoid possible NAs by round)
+  tempMaxCorrection <- ceiling(100*max(spatialInfo$relRisk))/100 # trick not done in Maps to avoid problems with round, and also avoid a large maxima label
+  spatialInfo[, labels := cut(relRisk,
+                              breaks = c(0, sort(round(exp(c(rev(-tempQuants), tempQuants)), digits = 2))[2:(2*length(tempQuants) - 1)], tempMaxCorrection),
+                              #breaks = c(0, sort(round(exp(c(rev(-tempQuants), tempQuants)), digits = 2))[2:(2*length(tempQuants))]),
+                              include.lowest = F)]
+  
+  dataToMap <- data.table(fortify(chosenAreas$shpLSOA), key = "id") # or broom::tidy
+  setkey(spatialInfo, mapRn)
+  dataToMap[spatialInfo, c("labels", "relRisk") := .(labels, relRisk)]
+  tempLads <- data.shapeLADS[data.shapeLADS$lad18cd %in% dataLSOA[LSOA11CD %in% chosenAreas$LSOACDs, LAD17CD],]
+  g4 <- ggplot(dataToMap, aes(x = long, y = lat)) +
+    geom_polygon(aes(group = group, fill = labels), alpha = 1, colour = "gray90", size = 0.1) +
+    geom_polygon(data = tempLads, aes(group = group), colour = "black", fill = NA, size = 1) +
+    annotate(geom = "rect", xmin = mapLims$xE[1], xmax = mapLims$xE[2], ymin = mapLims$yE[1], ymax = mapLims$yE[2],
+             fill = "transparent", color = "black", size = 1.5) +
+    # CHOOSE:
+    annotate(geom = "text", x = c(-1.6, -1.5), y = c(52.15, 51.5), label = c("NORTHAMPTONSHIRE", "OXFORDSHIRE")) + # OX
+    #annotate(geom = "text", x = c(-2.45, -1.58), y = c(55.75, 54.9), label = c("NORTHUMBERLAND", "NEWCASTLE,\nNORTH TYNESIDE")) + # TW
+    scale_fill_manual(guide = "legend", values = rev(brewer_pal(type = "div", palette = "RdBu")(9))) +
+    coord_quickmap(xlim = mapLims$x, ylim = mapLims$y) + theme_void(base_size = 16) +
+    labs(x = "", y = "", fill = "Relative risk of\nsporadic cases") +
+    guides(fill = guide_legend(reverse = TRUE))
+  g4#savePDF(g4, fileName = "Plot21082019_04_33c8_2008201901_Tinis_OX_map", 8, 8)
+  #savePDF(g4, fileName = "Plot05122019_03_38p12c5_0312201901_Tinis_OX_map", 8, 8)
+  #savePDF(g4, fileName = "Plot06032020_03_38p12c5_0303202099_Tinis_OX_map", 8, 8)
+  # Enlargement
+  tempLads2 <- tempLads[!tempLads$lad18nm %in% ifelse(typ == "OX", "Oxford", "Northumberland")]
+  g5 <- ggplot(dataToMap, aes(x = long, y = lat)) +
+    geom_polygon(aes(group = group, fill = labels), alpha = 1, colour = "gray90", size = 0.1) +
+    geom_polygon(data = tempLads2, aes(group = group), colour = "black", fill = NA, size = 1) +
+    #geom_text(data = chosenSites, aes(x = xCoord, y = yCoord, label = numCases), size = 2) +
+    scale_fill_manual(guide = "legend", values = rev(brewer_pal(type = "div", palette = "RdBu")(9))) + # PuBuGn
+    coord_quickmap(xlim = mapLims$xE, ylim = mapLims$yE) + theme_void(base_size = 16) +
+    guides(fill = FALSE) + theme(panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
+    labs(subtitle = ifelse(typ == "OX", "Oxford", "Newcastle upon Tyne - North Tyneside"))
+  g5#savePDF(g5, fileName = "Plot21082019_05_33c8_2008201901_Tinis_OX_map2", 4, 4)
+  #savePDF(g5, fileName = "Plot05122019_04_38p12c5_0312201901_Tinis_OX_map2", 4, 4)
+  #savePDF(g5, fileName = "Plot06032020_04_38p12c5_0303202099_Tinis_OX_map2", 8, 8)
+}
+
+# NEW VERSION after 17.03.2020
+# Changes: only to include deciles in legend. Changes: tempQuands, spatialInfo$labels, and scale_fill_manual
+# Changes: plot is gonna be larger in document
+tempQuants <- quantile(abs(log(spatialInfo$relRisk)), c(2/10,4/10,6/10,8/10,10/10))
 # (04.01.2020 correction: better max label and avoid possible NAs by round)
 tempMaxCorrection <- ceiling(100*max(spatialInfo$relRisk))/100 # trick not done in Maps to avoid problems with round, and also avoid a large maxima label
 spatialInfo[, labels := cut(relRisk,
-                            breaks = c(0, sort(round(exp(c(rev(-tempQuants), tempQuants)), digits = 2))[2:(2*length(tempQuants) - 1)], tempMaxCorrection),
+                            breaks = c(0, sort(round(exp(c(rev(-tempQuants), 0, tempQuants)), digits = 2))[2:(2*length(tempQuants))], tempMaxCorrection),
                             #breaks = c(0, sort(round(exp(c(rev(-tempQuants), tempQuants)), digits = 2))[2:(2*length(tempQuants))]),
                             include.lowest = F)]
 
@@ -564,24 +692,24 @@ g4 <- ggplot(dataToMap, aes(x = long, y = lat)) +
   # CHOOSE:
   annotate(geom = "text", x = c(-1.6, -1.5), y = c(52.15, 51.5), label = c("NORTHAMPTONSHIRE", "OXFORDSHIRE")) + # OX
   #annotate(geom = "text", x = c(-2.45, -1.58), y = c(55.75, 54.9), label = c("NORTHUMBERLAND", "NEWCASTLE,\nNORTH TYNESIDE")) + # TW
-  scale_fill_manual(guide = "legend", values = rev(brewer_pal(type = "div", palette = "RdBu")(9))) +
-  coord_quickmap(xlim = mapLims$x, ylim = mapLims$y) + theme_void(base_size = 16) +
+  scale_fill_manual(guide = "legend", values = rev(brewer_pal(type = "div", palette = "RdBu")(10))) +
+  coord_quickmap(xlim = mapLims$x + c(0.05, 0.2), ylim = mapLims$y) + theme_void(base_size = 14) + # NEW
   labs(x = "", y = "", fill = "Relative risk of\nsporadic cases") +
-  guides(fill = guide_legend(reverse = TRUE))
-g4#savePDF(g4, fileName = "Plot21082019_04_33c8_2008201901_Tinis_OX_map", 8, 8)
-#savePDF(g4, fileName = "Plot05122019_03_38p12c5_0312201901_Tinis_OX_map", 8, 8)
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme(legend.position = c(0.9, 0.68))
+g4#savePDF(g4, fileName = "Plot17032020_04_38p12c5_0303202099_Tinis_OX_map", 9, 8)
 # Enlargement
 tempLads2 <- tempLads[!tempLads$lad18nm %in% ifelse(typ == "OX", "Oxford", "Northumberland")]
 g5 <- ggplot(dataToMap, aes(x = long, y = lat)) +
   geom_polygon(aes(group = group, fill = labels), alpha = 1, colour = "gray90", size = 0.1) +
   geom_polygon(data = tempLads2, aes(group = group), colour = "black", fill = NA, size = 1) +
   #geom_text(data = chosenSites, aes(x = xCoord, y = yCoord, label = numCases), size = 2) +
-  scale_fill_manual(guide = "legend", values = rev(brewer_pal(type = "div", palette = "RdBu")(9))) + # PuBuGn
+  scale_fill_manual(guide = "legend", values = rev(brewer_pal(type = "div", palette = "RdBu")(10))) + # PuBuGn
   coord_quickmap(xlim = mapLims$xE, ylim = mapLims$yE) + theme_void(base_size = 16) +
   guides(fill = FALSE) + theme(panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
-  labs(subtitle = ifelse(typ == "OX", "Oxford", "Newcastle upon Tyne - North Tyneside"))
-g5#savePDF(g5, fileName = "Plot21082019_05_33c8_2008201901_Tinis_OX_map2", 4, 4)
-#savePDF(g5, fileName = "Plot05122019_04_38p12c5_0312201901_Tinis_OX_map2", 4, 4)
+  labs(subtitle = ifelse(typ == "OX", "Oxford", "Newcastle upon Tyne - North Tyneside")) +
+  theme(plot.subtitle = element_text(size = 50)) # NEW
+g5#savePDF(g5, fileName = "Plot17032020_05_38p12c5_0303202099_Tinis_OX_map2", 8, 8)
 
 # .Spatial overview ----
 # (05.02.2020)
@@ -755,10 +883,10 @@ if(0){
   # THEREFORE: change mean to meadian in loop above
 }
 
-# Outbreak table* ----
+# Outbreak table* (SG only) ----
 # REQUIRES 5./Expected number of cases per genome with dimForPlot = 3 (just before)
 
-THRESHOLD <- 0.15
+THRESHOLD <- 0.1
 outProbs[proba > THRESHOLD]
 casesForModels[probaOutbreak > THRESHOLD]
 
@@ -801,6 +929,131 @@ ghist <- ggplot(dataToPlot[value < 1000]) + geom_histogram(aes(x = value, y = ..
   theme(panel.grid.major = element_line(colour = "gray", size = 0.3), panel.grid.minor = element_line(colour = "gray", size = 0.1)) + # as in theme_laura2
   labs(x = "distance")
 ghist#savePDF(ghist, fileName = "Plot30012020_01_38p12c5_18122019Input_HistClust", 8, 4) # warning
+
+# 17.03.2020
+# Expected number of cases per week ----
+# As in 5./'Expected number of cases per genome'
+subsetIterations <- finalIterationss
+# TODO
+subsetBlockG <- c(238, 395, 522) # dim3Cases from outbreak table... More than that would be crazy # temp_MAT32
+subsetG <- sort(unique(genomeForModels[clusterHighId %in% subsetBlockG, clusterLowId]))
+matrixPop <- aperm(array(pop, dim = c(numRegions, numWeeks, numSequences)), perm = c(2,1,3))
+sCasesU <- matrix(0, nrow = numDims[2], ncol = length(subsetIterations))
+eCasesU <- matrix(0, nrow = numDims[2], ncol = length(subsetIterations))
+sCasesG <- matrix(0, nrow = numDims[3], ncol = length(subsetIterations))
+eCasesG <- matrix(0, nrow = numDims[3], ncol = length(subsetIterations))
+sCasesAll <- array(0, dim = c(numDims[2], length(subsetG), length(subsetIterations)))
+eCasesAll <- array(0, dim = c(numDims[2], length(subsetG), length(subsetIterations)))
+for(it in 1:length(subsetIterations)){ # ~ 30s
+  matrixG <- aperm(array(outputG[,it], dim = c(numSequences, numWeeks, numRegions)), perm = c(2,3,1))
+  matrixS <- array(outputS[,it], dim = c(numWeeks, numRegions, numSequences))
+  matrixR <- aperm(array(outputR[,it], dim = c(numRegions, numWeeks, numSequences)), perm = c(2,1,3))
+  if(!1 %in% dimToInclude){
+    ttt <- cbind(1, storage$parameters$X[it][[1]])
+    ttt2 <- array(0, dim = numBlockDims)
+    ttt2[ttt] <- 1
+    matrixX <- array(ttt2[allToGroups], dim = c(numWeeks, numRegions, numSequences))
+  }else{
+    # TODO
+  }
+  if(dimBeta == 2){
+    matrixB <- aperm(array(outputB[jToGroups, it], dim = c(numRegions, numWeeks, numSequences)), perm = c(2,1,3))
+  }else if(dimBeta == 3){
+    matrixB <- aperm(array(outputB[kToGroups, it], dim = c(numSequences, numWeeks, numRegions)), perm = c(2,3,1))
+  }
+  matrixXBexp <- exp(matrixX*matrixB)
+  sCasesU[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG), 2, sum) # 3!!!!!!!!!!!
+  eCasesU[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp, 2, sum)
+  sCasesG[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG), 3, sum)
+  eCasesG[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp, 3, sum)
+  sCasesAll[,,it] <- (matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG))[,,subsetG]
+  eCasesAll[,,it] <- (matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp)[,,subsetG]
+} # Expect warnings
+dataToPlot <- rbind(data.table(k = 1:numDims[dimForPlot], cases = sapply(1:numDims[dimForPlot], function(kk) median(sCasesG[kk,])), type = "sporadic"),
+                    data.table(k = 1:numDims[dimForPlot], cases = sapply(1:numDims[dimForPlot], function(kk) median(eCasesG[kk,])), type = "total"),
+                    data.table(k = 1:numDims[dimForPlot], cases = apply(y, dimForPlot, sum), type = "observed"))
+tempOrderPlot <- dataToPlot[type == "sporadic", frank(cases, ties.method = "dense")]
+dataToPlot[, orderK := sapply(k, function(x) tempOrderPlot[x])]
+ggplot(dataToPlot[order(orderK)], aes(x = orderK, y = cases, colour = factor(type, levels = c("total", "sporadic", "observed")))) + geom_path() + theme_laura() +
+  labs(colour = "type") # k 418
+
+# 06.03.2020
+# Time series (TG only) ----
+# (as in 33d.R/11.)
+weeksInfo <- weeksForModels # to mimic previous code
+str(outputS)
+str(y)
+weeksInfo[order(row), numCases := apply(y, 1, sum)]
+weeksInfo[order(row), eCases := apply(epiclustR:::ssapply(mod, epiclustR:::extract_variable, "ecases"), 1, mean)] #weekId or row
+weeksInfo[order(row), sCases := apply(epiclustR:::ssapply(mod, epiclustR:::extract_variable, "scases"), 1, mean)] #weekId or row
+
+eCasesAll_col <- apply(eCasesAll, 1:2, mean)
+sCasesAll_col <- apply(sCasesAll, 1:2, mean)
+#e.g. eCasesAll_col[regionsForModels[region == 26, col], which(subsetG %in% genomeForModels[clusterHighId == 238, col])]
+casesForModels[probaOutbreak > THRESHOLD,
+               ecasesBlock := mapply(function(x, y) sum(eCasesAll_col[regionsForModels[region == x, col], which(subsetG %in% genomeForModels[clusterHighId == y, col])]),
+                                     region, clusterHighId)]
+casesForModels[probaOutbreak > THRESHOLD,
+               scasesBlock := mapply(function(x, y) sum(sCasesAll_col[regionsForModels[region == x, col], which(subsetG %in% genomeForModels[clusterHighId == y, col])]),
+                                     region, clusterHighId)]
+
+dataToPlot <- data.table(melt(weeksInfo, id.vars = c("weekId", "label", "isLabel"), measure.vars = c("numCases", "eCases", "sCases")))
+g23 <- ggplot(dataToPlot, aes(x = weekId, y = value, colour = variable, size = variable)) + geom_line() + theme_laura(size = 16) +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5)) +
+  labs(x = "", y = "", colour = "", size = "", subtitle = ifelse(typ == "OX", "Oxfordshire", "Newcastle upon Tyne - North Tyneside")) +
+  scale_x_continuous(breaks = weeksInfo[isLabel == T][order(weekId), weekId],
+                     labels = weeksInfo[isLabel == T][order(weekId), label]) +
+  scale_y_continuous(breaks = seq(0, max(weeksInfo$numCases), 5)) +
+  scale_color_manual(values = c("gray70", "red", "black"), labels = c("observed cases", "outbreak cases", "sporadic cases")) +
+  scale_size_manual(values = c(0.4,0.4,0.8), labels = c("observed cases", "outbreak cases", "sporadic cases")) +
+  theme(legend.position = c(0.14, 0.9), legend.background = element_rect(colour = "transparent", fill = "transparent"))
+
+# Distance within outbreaks (TG only) ----
+setkey(casesForModels, idInDataLSOA)
+setkey(dataLSOA, id)
+casesForModels[dataLSOA, c("xCoord", "yCoord") := .(xCoord, yCoord)]
+#casesForModels[, maxDistance := numeric(0)]
+#dataToPlot <- casesForModels[!is.na(idOutbreak), .(.N, max(numWeek_corrected) - min(numWeek_corrected)), .(idOutbreak, probaOutbreak)] OLD SG
+dataToPlot <- casesForModels[!is.na(idOutbreak),.N,.(idOutbreak, probaOutbreak, sizeOutbreak)][N>1] # ???!is.na(idOutbreak)
+dataToPlot[, maxDistance := numeric(0)]
+for(ii in 1:nrow(dataToPlot)){
+  coordsOut <- casesForModels[idOutbreak == dataToPlot[ii, idOutbreak], .(idInDataInfo, xCoord, yCoord)]
+  pairOut <- CJ(coordsOut$idInDataInfo, coordsOut$idInDataInfo)
+  setkey(pairOut, V1)
+  setkey(coordsOut, idInDataInfo)
+  pairOut[coordsOut, c("xCoord_1", "yCoord_1") := .(xCoord, yCoord)]
+  setkey(pairOut, V2)
+  setkey(coordsOut, idInDataInfo)
+  pairOut[coordsOut, c("xCoord_2", "yCoord_2") := .(xCoord, yCoord)]
+  pairOut[, distance := mapply(function(x1,x2,y1,y2) geosphere::distHaversine(c(x1,y1), c(x2,y2)), xCoord_1, xCoord_2, yCoord_1, yCoord_2)]
+  #casesForModels[idOutbreak == dataToPlot[ii, idOutbreak], maxDistance := max(pairOut$distance)]
+  dataToPlot[ii, maxDistance := max(pairOut$distance)]
+} # Fastish
+
+#setnames(dataToPlot, c("N", "V2"), c("sizeOutbreak", "interval")) # OLD SG
+#ggplot(dataToPlot, aes(x = probaOutbreak, y = interval, colour = sizeOutbreak == 1)) + geom_point() + theme_laura() # OLD SG
+gTOut <- ggplot(dataToPlot[sizeOutbreak > 1], aes(x = probaOutbreak, y = maxDistance/1000)) + geom_point(size = 4) + theme_laura(size = 15) +
+  labs(x = TeX("probability of outbreak $\\rho_{\\sigma\\xi}$"), y = TeX("max. distance within block $\\sigma\\xi$ (km)"))
+gTOut#savePDF(gTOut, fileName = "Plot06032020_10_38p12c5_05032020_M12_TimeComp", 8, 5.5)
+#savePDF(gTOut, fileName = "Plot17032020_08BORR_38p12c5_17032020_M12_TimeComp", 8, 5.5)
+
+# Outbreak table* (TG only) ----
+# TODO
+
+# Dendogram of cuts ----
+# Do not require 0. 1.
+uploadPackages(c("ggplogt2", "ggdendro"))
+# CHOOSE correponding dendogram used to build data
+load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18122019_ClustersKInfo_OX.RData")
+# (Created in 38_01_V2.R/II.) hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups*
+dd <- ggdendrogram(hClustOut, theme_dendro = FALSE) # ~ 5sec
+gDd <- dd + geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = 10, ymax = 130), alpha = 0.5, fill = "#A7333F") + geom_hline(yintercept = c(10, 50), colour = "#F2DD6E", size = 1.2) + # 74121D
+  theme_laura() + labs(x = "sequences", y = "height") +# FFE0B5
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        axis.ticks.y = element_line(size = 0.5), axis.text.y = element_text(hjust = 0.5, margin = margin(t = 0, r = 5, b = 0, l = 0))) +
+  #scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(breaks = c(0, seq(0, length(hClustOut$order), 100), length(hClustOut$order)), expand = c(0.01,0)) # expect warning?
+#savePDF(gDd, fileName = "Plot17032020_01_38p12c5_18122019Input_Dendrogram", 8, 4.5)
 
 # BORRAR!! ----
 

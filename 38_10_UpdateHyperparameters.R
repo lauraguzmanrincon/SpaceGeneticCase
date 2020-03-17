@@ -14,7 +14,8 @@ if(config$ifLTauGUpdate && it > 20){ # ifLTauGUpdate    ifLTauGUpdate && it%%20 
     }
   }
   #deltaMatrixProposal <- deltaMatrixFn(proposalL, maternParameter) # + 0.5*diag(numSequences)
-  deltaMatrixProposal <- as.spam(deltaMatrixFn(proposalL, distanceMatrixMCMC, sqrDistanceMatrix, config$maternParameter) + 0.01*diag(numSequences))
+  # SPAM deltaMatrixProposal <- as.spam(deltaMatrixFn(proposalL, distanceMatrixMCMC, sqrDistanceMatrix, config$maternParameter) + 0.01*diag(numSequences))
+  deltaMatrixProposal <- deltaMatrixFn(proposalL, distanceMatrixMCMC, sqrDistanceMatrix, config$maternParameter) + 0.01*diag(numSequences) # ??? 03.03.2020 17.45
   #invDeltaMatrixProposal <- as.spam(solve(deltaMatrixProposal)) # slow if very large l
   invDeltaMatrixProposal <- AMatrix%*%solve(deltaMatrixProposal)%*%AMatrix # 22.01.2020 new precision matrix, no spam (see 43.R)
   
@@ -38,13 +39,14 @@ if(config$ifLTauGUpdate && it > 20){ # ifLTauGUpdate    ifLTauGUpdate && it%%20 
     parameters$l <- proposalL
     parameters$tau.G <- proposalTau
     storage$accept$l <- storage$accept$l + 1
-    #sigmaJumps$l <- sigmaJumps$l*x # TODO ???
+    sigmaJumps$l <- sigmaJumps$l*x # TODO ???
     deltaMatrix <- deltaMatrixProposal # debug 18.12.2019 :)
     invDeltaMatrix <- invDeltaMatrixProposal # debug 18.12.2019 :)
     cat("LT accepted ")
   } else {
     storage$reject$l <- storage$reject$l + 1
     #sigmaJumps$l <- ifelse(sigmaJumps$l > 0.05, sigmaJumps$l*x^(-0.7857), sigmaJumps$l)
+    sigmaJumps$l <- sigmaJumps$l*x^(-0.7857) # adapted jump added on 02.03.2020
     cat("LT rejected ")
   }
 }

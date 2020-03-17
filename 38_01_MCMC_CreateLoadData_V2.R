@@ -404,11 +404,12 @@ save(inputForData,
      numWeeks, numWeeksGroups, numRegionsGroups, numSequenceGroups,
      numDims, numBlockDims, listDims, allToGroups,
      y, distanceMatrixMCMC, matrixForGMRF_nb, matrixForGMRF,
-     #file = "07_MixedModelsP2/RCode_201911/38_Files/38_01_21112019_MCMCInputTinis.RData")
-     #file = "07_MixedModelsP2/RCode_201911/38_Files/38_01_21112019_SimulInputTinis.RData")
-     #file = "07_MixedModelsP2/RCode_201912/38_01_18122019_MCMCInput_GOX.RData")
+     #file = "007_MixedModelsP2/RCode_201911/38_Files/38_01_21112019_MCMCInputTinis.RData")
+     #file = "007_MixedModelsP2/RCode_201911/38_Files/38_01_21112019_SimulInputTinis.RData")
+     #file = "007_MixedModelsP2/RCode_201912/38_01_18122019_MCMCInput_GOX.RData")
      #file = "007_MixedModelsP2/RCode_201912/38_01_06012020_MCMCInput_GOX2.RData")
-     file = "07_MixedModelsP2/RCode_201912/38_01_06012020_MCMCInput_GOX3.RData")
+     #file = "007_MixedModelsP2/RCode_201912/38_01_06012020_MCMCInput_GOX3.RData")
+     file = "007_MixedModelsP2/RCode_202002/38_01_05032020_MCMCInput_TGOX.RData")
 
 
 

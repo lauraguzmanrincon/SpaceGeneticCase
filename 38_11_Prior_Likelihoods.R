@@ -111,9 +111,27 @@ deltaMatrixFn <- function(l, inputMatrix, sqrInputMatrix, maternParam){
 #}
 
 # 18.12.2019 :)
-# Overall likelihood
+# Overall likelihood ----
 lll <- function(){
   value <- sum(y*(parameters$a + matrixG + matrixS + matrixR + matrixB*matrixX) - matrixPop*exp(parameters$a)*matrixGexp*matrixSexp*matrixRexp*matrixXBexp)
+  return(value)
+}
+
+# 26.02.2020 (from sandbox 45.R/2.)
+# Parameter Gk for Knorr block update ----
+llGKnorr <- function(kVector, GkVector){
+  GkMatrix <- drop(aperm(array(GkVector, dim = c(length(GkVector), numWeeks, numRegions)), perm = c(2,3,1)))
+  # Note there is a drop we didn't use before... it seems it was not relevant until we use a block of indices???
+  value <- sum(y[,,kVector]*GkMatrix - matrixPop[,,kVector]*exp(parameters$a)*exp(GkMatrix)*matrixSexp[,,kVector]*matrixRexp[,,kVector]*matrixXBexp[,,kVector])
+  return(value)
+}
+
+# 17.03.2020 (Similar to llGKnorr)
+# Parameter Si for Knorr block update ----
+llSKnorr <- function(iVector, SiVector){
+  SiMatrix <- drop(array(SiVector, dim = c(length(SiVector), numRegions, numSequences)))
+  # Note there is a drop we didn't use before... it seems it was not relevant until we use a block of indices???
+  value <- sum(y[iVector,,]*SiMatrix - matrixPop[iVector,,]*exp(parameters$a)*exp(SiMatrix)*matrixGexp[iVector,,]*matrixRexp[iVector,,]*matrixXBexp[iVector,,])
   return(value)
 }
 

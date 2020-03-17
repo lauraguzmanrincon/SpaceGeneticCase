@@ -3,11 +3,13 @@
 # Data: FS101013 V2
 # Created on 26.10.2019
 # Adapted from the 28 files, created on 24.06.2019
-# Changes: --.--.2019:
+# Changes:  --.--.2019:
+#           26.02.2020: Add block update for G
 # ------------------------------ #
 
-runTinis <- 1 # !!!!!!!!!!!!!!!!!!!!!
+runTinis <- 0 # !!!!!!!!!!!!!!!!!!!!!
 simulatedData <- 0
+typeModel <- "TG"
 
 if(runTinis == 0){
   if(1){
@@ -17,12 +19,12 @@ if(runTinis == 0){
     source("07_MixedModelsP2/RCode_201908/34_HeaderFor201908.R") # load workspace for August 2019
     load("07_MixedModelsP2/RCode_201909/33a_03092019_DataOXTW_Perfect_Depr.RData") # dataLSOA, dataMSOA, dataInfoPostSOA, chosenAreasOX, chosenAreasTW
     dirFiles <- "07_MixedModelsP2/RCode_201911/38_Files/"
-    dirOutFiles <- "07_MixedModelsP2/RCode_202001/"
+    dirOutFiles <- "07_MixedModelsP2/RCode_202002/"
   }
   if(1){
     # 1. Create/load data ----
     # TODO organise
-    dimToInclude <- sort(c(2,3)) # T S G # Never do the three of them!
+    dimToInclude <- sort(c(1,3)) # T S G # Never do the three of them!
     lengthBlockPeriod <- 1 # should be 1 if 1 is not in dimToInclude!!!
     dimBeta <- 3 # dimension where B is gonna change (2 or 3 or 123) # if 123 numBeta must be ignored TODO check
     heighCutLow <- 10 #   50  10   NO1
@@ -33,15 +35,22 @@ if(runTinis == 0){
       # Construct data
       #source(paste0(dirFiles, "38_01_MCMC_CreateLoadData_V2.R")) # ~ 8 sec
       # Or load (not formal)
-      #WRONGload("07_MixedModelsP2/RCode_201911/38_Files/38_01_21112019_MCMCInputTinis.RData") # CONFIG: inputForData OR notsim, dims23, interval3, beta3, cuts50/300, regionOXMSOA
       #NOTE:length(unique(casesForModels$clusterLowId)) == numSequences
-      load("07_MixedModelsP2/RCode_201912/38_01_18122019_MCMCInput_GOX.RData") # CONFIG: inputForData OR notsim, dims23, interval3, beta3, cuts10/50, regionOXMSOA
-      # used for 38_00_18122019, 38_00_02012020_newprior, 38_00_04012020_newprior, 38_00_06012020_newprior[*]
-      #load("07_MixedModelsP2/RCode_201912/38_01_06012020_MCMCInput_GOX2.RData") # CONFIG: inputForData OR notsim, dims23, interval3, beta3, cuts1/25, regionOXMSOA
-      # used for 38_00_06012020_newradii
-      #load("07_MixedModelsP2/RCode_201912/38_01_06012020_MCMCInput_GOX3.RData") # CONFIG: inputForData OR notsim, dims23, interval3, beta3, cuts50/300, regionOXMSOA
-      # used for 38_00_06012020_newradii2
+      if(typeModel == "SG"){
+        # CURRENT ONE for SG:
+        load("07_MixedModelsP2/RCode_201912/38_01_18122019_MCMCInput_GOX.RData") # CONFIG: inputForData OR notsim,dims23,interval3,beta3,cuts10/50,regionOXMSOA
+        # used for 38_00_18122019, 38_00_02012020_newprior, 38_00_04012020_newprior, 38_00_06012020_newprior[*]
+        #load("07_MixedModelsP2/RCode_201912/38_01_06012020_MCMCInput_GOX2.RData") # CONFIG: inputForData OR notsim,dims23,interval3,beta3,cuts1/25,regionOXMSOA
+        # used for 38_00_06012020_newradii
+        #load("07_MixedModelsP2/RCode_201912/38_01_06012020_MCMCInput_GOX3.RData") # CONFIG: inputForData OR notsim,dims23,interval3,beta3,cuts50/300,regionOXMSOA
+        # used for 38_00_06012020_newradii2
+      }else if(typeModel == "TG"){
+        # CURRENT ONE for TG:
+        load("07_MixedModelsP2/RCode_202002/38_01_05032020_MCMCInput_TGOX.RData") # CONFIG: inputForData OR notsim,dims13,interval3,beta3,cuts10/50,regionOXMSOA
+      }
       length(unique(casesForModels$clusterLowId)) == numSequences
+      load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18122019_ClustersKInfo_OX.RData") # add clustering for G block update! 26.02.2020
+      # hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups*
     }else{
       # note simulatedData is stored as 0 in the first file!
       load("07_MixedModelsP2/RCode_201911/38_Files/38_01_21112019_MCMCInputTinis.RData") # CONFIG: notsim, dims23, interval3, beta3, cuts50/300, regionOXMSOA
@@ -92,6 +101,21 @@ nameOutput <- "38_00_temp_SE_Dell_noconstBORRAR.RData" # tauG: 1,0.01 rho: 10,0.
 nameOutput <- "38_00_2601202002_Tinis_SE_Constraint.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0
 #nameOutput <- "38_00_2601202001_Tinis_MAT12_Constraint.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 1/2
 #nameOutput <- "38_00_2601202001_Tinis_MAT32_Constraint.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 3/2
+# Running with G block update on Tinis (change for different chains...). Also, several revisions to improve mixing...
+nameOutput <- "38_00_2602202001_Tinis_SE_GBlock.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0
+nameOutput <- "38_00_2602202001_Tinis_MAT12_GBlock_rho.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 1/2
+nameOutput <- "38_00_0203202002_Tinis_MAT12_GBlock_rho_two.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 1/2
+nameOutput <- "38_00_0303202001_Tinis_MAT12_GBlock_rho_two.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 1/2
+nameOutput <- "38_00_0303202001_Tinis_MAT32_GBlock_rho_two.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 3/2
+nameOutput <- "38_00_0303202001_Tinis_SE_GBlock_rho_two.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0
+# Running TG 05.03.2020
+nameOutput <- "38_00_0503202001_TinisTG_MAT12.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5
+nameOutput <- "38_00_0503202001_TinisTG_MAT12_500it.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5
+# Running SG for all cutting points
+nameOutput <- "38_00_1403202001_TinisSG_MAT12_1000it_cuts.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5
+# Running TG with S block update to improve mixing 17.03.2020
+nameOutput <- "38_00_1703202001_TinisTG_MAT12_500it_Sblock.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5
+nameOutput <- "BORRAR"
 
 # 2. Set-up environment ----
 source(paste0(dirFiles, "38_02_AuxiliarFn.R"))
@@ -111,7 +135,7 @@ constants <- initConstants(aB = 2, bB = 1, aG = 1, bG = 0.01, aL = 10, bL = 0.5)
 #config <- initConfig(numIterations = 50, burnIn = 10) # quick exploration
 #config <- initConfig(numIterations = 1000, burnIn = 50, ifAUpdate = 1, ifRUpdate = 0, ifSUpdate = 0, ifGUpdate = 0, ifBUpdate = 0, ifXUpdate = 0,
 #                     ifPUpdate = 0, ifTauRUpdate = 0, ifTauSUpdate = 0, ifLTauGUpdate = 0)
-config <- initConfig(numIterations = 5000, burnIn = 50, maternParameter = 0,
+config <- initConfig(numIterations = 1000, burnIn = 50, maternParameter = 0.5,
                      ifAUpdate = 1, ifRUpdate = 1, ifGUpdate = 1, ifBUpdate = 1, ifXUpdate = 1,
                      ifPUpdate = 1, ifTauRUpdate = 1, ifLTauGUpdate = 1)
 # TODO create optional constructParam() function
@@ -125,8 +149,8 @@ parameters <- out$parameters
 sigmaJumps <- out$sigmaJumps
 cat("A", parameters$a, "/n")
 
-parameters$a <- 0 # 19.01.2020 constrain correction
-config$ifAUpdate <- 0 # 19.01.2020 constrain correction
+#parameters$a <- 0 # 19.01.2020 constrain correction
+#config$ifAUpdate <- 0 # 19.01.2020 constrain correction
 
 # Requires: distanceMatrixMCMC pop matrixForGMRF y
 # iToGroups jToGroups kToGroups
@@ -151,7 +175,8 @@ AMatrix <- diag(1, numSequences, numSequences) - matrix(1/numSequences, numSeque
 # TODO c++??
 #deltaMatrix <- deltaMatrixFn(parameters$l, maternParameter) # + 0.5*diag(numSequences)
 #invDeltaMatrix <- solve(deltaMatrix)
-deltaMatrix <- as.spam(deltaMatrixFn(parameters$l, distanceMatrixMCMC, sqrDistanceMatrix, config$maternParameter) + 0.01*diag(numSequences))
+# SPAM deltaMatrix <- as.spam(deltaMatrixFn(parameters$l, distanceMatrixMCMC, sqrDistanceMatrix, config$maternParameter) + 0.01*diag(numSequences))
+deltaMatrix <- deltaMatrixFn(parameters$l, distanceMatrixMCMC, sqrDistanceMatrix, config$maternParameter) + 0.01*diag(numSequences) # ??? 03.03.2020 17.45
 #invDeltaMatrix <- solve(deltaMatrix) # TODO works always as a matrix?
 invDeltaMatrix <- AMatrix%*%solve(deltaMatrix)%*%AMatrix # 22.01.2020 new precision matrix, no spam (see 43.R)
 matrixS <- array(parameters$S, dim = c(numWeeks, numRegions, numSequences))
@@ -232,10 +257,13 @@ for (it in 1:numIterations) {# 1:numIterations  (numIterations + 1):(2*numIterat
   storage$parameters$tau.G[it] <- parameters$tau.G
   storage$parameters$p[it] <- parameters$p
   storage$parameters$l[it] <- parameters$l
+  storage$parameters$cutHeight[it] <- parameters$cutHeight # 27.02.2020
+  storage$parameters$sBlockSize[it] <- parameters$sBlockSize # 17.03.2020
   
   # Store expected number of cases
   # TODO test
-  #if(1 %in% dimToInclude){
+  # TODO it has not been implemented really because the storage capacity is insane if we wanna do it for every cell... better manually afterwards
+  #if(1 %in% dimToInclude){ ???
   #  # Recall: matrixXBexp already exists
   #  matrixG <- aperm(array(parameters$G, dim = c(numSequences, numWeeks, numRegions)), perm = c(2,3,1))
   #  matrixS <- array(parameters$S, dim = c(numWeeks, numRegions, numSequences))
