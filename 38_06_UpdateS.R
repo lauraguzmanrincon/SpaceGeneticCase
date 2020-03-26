@@ -1,6 +1,8 @@
 # Requires: config, sigmaJumps, storage, parameters
 
+# Choose update method
 adaptTypeS <- ifelse(it%%2, 3, 1) # do not update 2 and 3 at the same time (storage issues to be fixed)
+#adaptTypeS <- ifelse(floor(it/5)%%2, 3, 1)
 parameters$sBlockSize <- 0 # only for adaptTypeS = 3
 
 if(config$ifSUpdate){
@@ -43,50 +45,43 @@ if(config$ifSUpdate){
     cat("S cond. updated ")
   }else if(adaptTypeS == 3){
     # II. (conditional block proposal)
-    randomSize <- sample(x = 1:40, size = 1, replace = TRUE)
-    parameters$sBlockSize <- randomSize
+    randomSize <- sample(x = 40, size = 1, replace = TRUE)
+    #randomStart <- sample(x = randomSize, size = 1, replace = TRUE)
+    randomStart <- 1
+    parameters$sBlockSize <- c(randomSize, randomStart)
+    itNumBlocksS <- (randomStart != 1) + ceiling((numWeeks - randomStart + 1)/randomSize)
     
-    for(sBlockIndex in 1:ceiling(numWeeks/randomSize)){
-      sBlockIndexes <- intersect((sBlockIndex - 1)*randomSize + (1:randomSize), 1:numWeeks)
+    for(sBlockIndex in 1:itNumBlocksS){
+      #if(sBlockIndex == 1 & randomStart != 1){
+      #  sBlockIndexes <- 1:(randomStart - 1)
+      #}else{
+      sBlockIndexes <- intersect(randomStart - 1 + (sBlockIndex - 1 - (randomStart != 1))*randomSize + (1:randomSize), 1:numWeeks)
+      #}
       
-      if(sBlockIndex %in% c(1, ceiling(numWeeks/randomSize))){
-        sBlockComplement <- setdiff(1:numWeeks, sBlockIndexes)
-        
-        muA <- solve(seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockIndexes])
-        muB <- seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockComplement]
-        muC <- parameters$S[sBlockComplement]
-        
-        muSample <- -muA%*%muB%*%muC
-      }else{
-        sBlockComplementL <- setdiff(1:max(sBlockIndexes), sBlockIndexes)
-        sBlockComplementR <- setdiff(min(sBlockIndexes):numWeeks, sBlockIndexes)
-        
-        muA <- solve(seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockIndexes])
-        muBL <- seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockComplementL]
-        muCL <- parameters$S[sBlockComplementL]
-        muBR <- seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockComplementR]
-        muCR <- parameters$S[sBlockComplementR]
-        
-        muSample <- -muA%*%((muBL%*%muCL) + (muBR%*%muCR))
-      }
+      sBlockComplement <- setdiff(1:numWeeks, sBlockIndexes)
       
+      # Fahrmeir: construct mu and sigma
+      muA <- solve(seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockIndexes])
+      muB <- seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockComplement]
+      muC <- parameters$S[sBlockComplement]
+      
+      muSample <- -muA%*%muB%*%muC # /parameters$tau.S
       sigmaSample <- muA/parameters$tau.S
-      proposalSKnorr <- mvrnorm(n = 1, mu = muSample, Sigma = sigmaSample)
       
+      # Create proposal
+      proposalSKnorr <- mvrnorm(n = 1, mu = muSample, Sigma = sigmaSample/sqrt(parameters$tau.S))
       larSKnorr <- llSKnorr(sBlockIndexes, proposalSKnorr) - llSKnorr(sBlockIndexes, parameters$S[sBlockIndexes])
       
       u <- runif(1)
       if(log(u) < larSKnorr){
         parameters$S[sBlockIndexes] <- proposalSKnorr
         storage$accept$ScondUp[sBlockIndexes] <- storage$accept$ScondUp[sBlockIndexes] + 1
-        #NO?sigmaJumps$S[sBlockIndexes] <- sigmaJumps$S[sBlockIndexes]*x
-        matrixS[,,sBlockIndexes] <- proposalSKnorr
-        matrixSexp[,,sBlockIndexes] <- exp(proposalSKnorr)
-        cat("Accepted:")
+        matrixS[sBlockIndexes,,] <- proposalSKnorr
+        matrixSexp[sBlockIndexes,,] <- exp(proposalSKnorr)
+        #cat("Accepted:")
       }else{
         storage$reject$ScondUp[sBlockIndexes] <- storage$reject$ScondUp[sBlockIndexes] + 1
-        #NO?sigmaJumps$S[sBlockIndexes] <- sigmaJumps$S[sBlockIndexes]*x^(-0.7857)
-        cat("Rejected:")
+        #cat("Rejected:")
       }
     }
     
