@@ -148,7 +148,7 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
                        #l = 3,
                        l = exp(rnorm(1, parametersVar1$l, parametersVar2$l)), # plotLogNorm
                        cutHeight = 0, # 27.02.2020
-                       sBlockSize = 0) # 17.03.2020
+                       sBlockSize = c(0,0)) # 17.03.2020
     #print(parameters$l)
     parameters$G <- parameters$G - mean(parameters$G) # update G inititalisation 26.02.2020
     if(dimBeta == 123){
@@ -282,7 +282,7 @@ createStorage <- function(config){
                             #scases = matrix(0, nrow = numWeeks, ncol = numIterations),
                             #ecases = matrix(0, nrow = numWeeks, ncol = numIterations),
                             cutHeight = rep(0, numIterations), # 27.02.2020
-                            sBlockSize = rep(0, numIterations)) # 17.03.2020
+                            sBlockSize = matrix(0, nrow = 2, ncol = numIterations)) # block size, starting point 17.03.2020
   if(dimBeta == 123){
     accept$B <- array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))
     reject$B <- array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))

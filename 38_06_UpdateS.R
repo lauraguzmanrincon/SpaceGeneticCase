@@ -45,7 +45,7 @@ if(config$ifSUpdate){
     cat("S cond. updated ")
   }else if(adaptTypeS == 3){
     # II. (conditional block proposal)
-    randomSize <- sample(x = 40, size = 1, replace = TRUE)
+    randomSize <- sample(x = 1:11, size = 1, replace = TRUE)
     #randomStart <- sample(x = randomSize, size = 1, replace = TRUE)
     randomStart <- 1
     parameters$sBlockSize <- c(randomSize, randomStart)
@@ -60,16 +60,16 @@ if(config$ifSUpdate){
       
       sBlockComplement <- setdiff(1:numWeeks, sBlockIndexes)
       
-      # Fahrmeir: construct mu and sigma
+      # Fahrmeir: construct mu and sigma for proposal
       muA <- solve(seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockIndexes])
       muB <- seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockComplement]
       muC <- parameters$S[sBlockComplement]
       
-      muSample <- -muA%*%muB%*%muC # /parameters$tau.S
+      muSample <- -muA%*%muB%*%muC
       sigmaSample <- muA/parameters$tau.S
       
       # Create proposal
-      proposalSKnorr <- mvrnorm(n = 1, mu = muSample, Sigma = sigmaSample/sqrt(parameters$tau.S))
+      proposalSKnorr <- mvrnorm(n = 1, mu = muSample, Sigma = sigmaSample)
       larSKnorr <- llSKnorr(sBlockIndexes, proposalSKnorr) - llSKnorr(sBlockIndexes, parameters$S[sBlockIndexes])
       
       u <- runif(1)

@@ -95,9 +95,12 @@ nameFiles <- "05032020_MCMCInput_TGOX"
 nameFilesOut <- "0503202001_TinisTG_MAT12" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 # 835854
 nameFilesOut <- "0503202001_TinisTG_MAT12_500it" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 # 835892 # no S block update...
 dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_202002/"
-#
-nameFilesOut <- "1703202001_TinisTG_MAT12_500it_Sblock" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 # 855373
-nameFilesOut <- "1703202001_TinisTG_MAT12_1000it_Sblock" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 # NOT YET
+# 
+nameFilesOut <- "1703202001_TinisTG_MAT12_500it_Sblock" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 # 855373 855397 # WRONG. BUG
+nameFilesOut <- "1703202001_TinisTG_MAT12_1000it_Sblock" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5
+# 855745NO 855777NO 855968NO 855984NO 856011NO 856487F 858896 858945 858959 859285 859466
+nameFilesOut <- "2903202001_TinisTG_MAT12_5000it_Sblock" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 interval:1 860415
+nameFilesOut <- "2903202001_TinisTG_MAT12_1000it_Interval4" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 interval:4 860433
 dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_202003/"
 # 14.03.2020 SG-cuts
 dirInputFiles <- "07_MixedModelsP2/RCode_201912/"
@@ -226,10 +229,10 @@ if(!1 %in% dimToInclude){
   casesForModels[outProbs, c("idOutbreak", "probaOutbreak") := .(id, proba)]
   casesForModels[, sizeOutbreak := .N, idOutbreak]
 }else{
-  setkey(casesForModels, dim3Cases)
+  setkey(casesForModels, dim1Cases)
   setkey(weeksForModels, row)
-  casesForModels[weeksForModels, groupId := groupId]
-  setkeyv(casesForModels, c("dim1Cases", "clusterHighId")) # TODO correct wrong!!!!!!!!!!!!!!!!!!!!!!!
+  casesForModels[weeksForModels, weekGroup := i.groupId]
+  setkeyv(casesForModels, c("weekGroup", "clusterHighId"))
   setkeyv(outProbs, c("row", "col"))
   casesForModels[outProbs, c("idOutbreak", "probaOutbreak") := .(id, proba)]
   casesForModels[, sizeOutbreak := .N, idOutbreak]
@@ -930,83 +933,106 @@ ghist <- ggplot(dataToPlot[value < 1000]) + geom_histogram(aes(x = value, y = ..
   labs(x = "distance")
 ghist#savePDF(ghist, fileName = "Plot30012020_01_38p12c5_18122019Input_HistClust", 8, 4) # warning
 
-# 17.03.2020
-# Expected number of cases per week ----
+# 29.03.2020
+# Compute expected number of cases per week (TG only) ----
 # As in 5./'Expected number of cases per genome'
-subsetIterations <- finalIterationss
-# TODO
-subsetBlockG <- c(238, 395, 522) # dim3Cases from outbreak table... More than that would be crazy # temp_MAT32
-subsetG <- sort(unique(genomeForModels[clusterHighId %in% subsetBlockG, clusterLowId]))
-matrixPop <- aperm(array(pop, dim = c(numRegions, numWeeks, numSequences)), perm = c(2,1,3))
-sCasesU <- matrix(0, nrow = numDims[2], ncol = length(subsetIterations))
-eCasesU <- matrix(0, nrow = numDims[2], ncol = length(subsetIterations))
-sCasesG <- matrix(0, nrow = numDims[3], ncol = length(subsetIterations))
-eCasesG <- matrix(0, nrow = numDims[3], ncol = length(subsetIterations))
-sCasesAll <- array(0, dim = c(numDims[2], length(subsetG), length(subsetIterations)))
-eCasesAll <- array(0, dim = c(numDims[2], length(subsetG), length(subsetIterations)))
-for(it in 1:length(subsetIterations)){ # ~ 30s
-  matrixG <- aperm(array(outputG[,it], dim = c(numSequences, numWeeks, numRegions)), perm = c(2,3,1))
-  matrixS <- array(outputS[,it], dim = c(numWeeks, numRegions, numSequences))
-  matrixR <- aperm(array(outputR[,it], dim = c(numRegions, numWeeks, numSequences)), perm = c(2,1,3))
-  if(!1 %in% dimToInclude){
-    ttt <- cbind(1, storage$parameters$X[it][[1]])
-    ttt2 <- array(0, dim = numBlockDims)
-    ttt2[ttt] <- 1
-    matrixX <- array(ttt2[allToGroups], dim = c(numWeeks, numRegions, numSequences))
-  }else{
-    # TODO
-  }
-  if(dimBeta == 2){
-    matrixB <- aperm(array(outputB[jToGroups, it], dim = c(numRegions, numWeeks, numSequences)), perm = c(2,1,3))
-  }else if(dimBeta == 3){
-    matrixB <- aperm(array(outputB[kToGroups, it], dim = c(numSequences, numWeeks, numRegions)), perm = c(2,3,1))
-  }
-  matrixXBexp <- exp(matrixX*matrixB)
-  sCasesU[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG), 2, sum) # 3!!!!!!!!!!!
-  eCasesU[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp, 2, sum)
-  sCasesG[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG), 3, sum)
-  eCasesG[,it] <- apply(matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp, 3, sum)
-  sCasesAll[,,it] <- (matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG))[,,subsetG]
-  eCasesAll[,,it] <- (matrixPop*exp(outputA[it] + matrixS + matrixR + matrixG)*matrixXBexp)[,,subsetG]
-} # Expect warnings
-dataToPlot <- rbind(data.table(k = 1:numDims[dimForPlot], cases = sapply(1:numDims[dimForPlot], function(kk) median(sCasesG[kk,])), type = "sporadic"),
-                    data.table(k = 1:numDims[dimForPlot], cases = sapply(1:numDims[dimForPlot], function(kk) median(eCasesG[kk,])), type = "total"),
-                    data.table(k = 1:numDims[dimForPlot], cases = apply(y, dimForPlot, sum), type = "observed"))
-tempOrderPlot <- dataToPlot[type == "sporadic", frank(cases, ties.method = "dense")]
-dataToPlot[, orderK := sapply(k, function(x) tempOrderPlot[x])]
-ggplot(dataToPlot[order(orderK)], aes(x = orderK, y = cases, colour = factor(type, levels = c("total", "sporadic", "observed")))) + geom_path() + theme_laura() +
-  labs(colour = "type") # k 418
+# Might be adaptable for other dimensions!!!!!!!!!!!!!!!!!!!!!! TODO
+# Both blocks are similar. First stores info per week per iteration. Second stores info per week per sequence. First one if wants .95 bands. Second if want genetic subplots.
 
-# 06.03.2020
-# Time series (TG only) ----
+subsetIterations <- finalIterations
+
+typeToPlotList <- casesForModels[!is.na(ccNum), .N, ccNum][order(-N), ccNum]
+indicesGToPlot <- append(list(1:numSequences), lapply(typeToPlotList, function(tt) casesForModels[ccNum == tt, unique(sort(clusterLowId))]))
+sCasesRList <- vector("list", length(indicesGToPlot))
+eCasesRList <- vector("list", length(indicesGToPlot))
+
+expOutputA <- exp(outputA)
+expOutputS <- exp(outputS)
+expOutputR <- exp(outputR)
+expOutputG <- exp(outputG)
+matrixX <- matrix(0, nrow = numWeeksGroups, ncol = numSequenceGroups) # if dimToInclude == c(1,3)!!!!
+
+if(1){
+  for(hh in 1:length(indicesGToPlot)){
+    sCasesRList[[hh]] <- matrix(0, nrow = numWeeks, ncol = length(subsetIterations))
+    eCasesRList[[hh]] <- matrix(0, nrow = numWeeks, ncol = length(subsetIterations))
+  }
+  
+  # Here we make it faster by: not storing all iterations, ignoring the S dimension, using few loops but not too large vectorisations
+  for(indIt in 1:length(subsetIterations)){
+    itt <- subsetIterations[indIt]
+    matrixX <- 0*matrixX
+    matrixX[as.matrix(outputX[it == itt, .(row, col)])] <- 1
+    termAux <- pop[1]*expOutputA[indIt]*(expOutputS[, indIt]%o%expOutputG[, indIt])
+    termAux2 <- termAux*exp(outputB[kToGroups, indIt]*matrixX[iToGroups, kToGroups]) # (10:11)*1:5%o%3:4
+    for(hh in 1:length(indicesGToPlot)){
+      sCasesRList[[hh]][,indIt] <- rowSums(termAux[, indicesGToPlot[[hh]], drop = FALSE])
+      eCasesRList[[hh]][,indIt] <- rowSums(termAux2[, indicesGToPlot[[hh]], drop = FALSE])
+      # last term: if dimBeta = 3 and dimToInclude == c(1,3)!!!!
+    }
+  } # ~1min # plotMatrix(sCasesR)
+  dimForPlot <- 1
+  weeksForModels[, sporadic := apply(sCasesRList[[1]], dimForPlot, median)[weekId]]
+  weeksForModels[, total := apply(eCasesRList[[1]], dimForPlot, median)[weekId]]
+  weeksForModels[, observed := apply(y[,,indicesGToPlot[[1]]], dimForPlot, sum)[weekId]]
+  weeksForModels[, year := year(received_date_nextFriday)]
+  weeksForModels[, label := paste0(month.abb[month(received_date_nextFriday)], "\n", year(received_date_nextFriday))]
+  weeksForModels[, isFirst := min(received_date_nextFriday), by = year]
+  weeksForModels[, isLabel := ifelse(isFirst == received_date_nextFriday | weekId == max(weekId), TRUE, FALSE)]
+}else{ # WRONG because mean does not work... don't know why!
+  sCasesAll <- matrix(0, nrow = numWeeks, ncol = numSequences)
+  eCasesAll <- matrix(0, nrow = numWeeks, ncol = numSequences)
+  
+  # Here we make it faster by: not storing all iterations, ignoring the S dimension, using few loops but not too large vectorisations
+  for(indIt in 1:length(subsetIterations)){
+    itt <- subsetIterations[indIt]
+    matrixX <- 0*matrixX
+    matrixX[as.matrix(outputX[it == itt, .(row, col)])] <- 1
+    termAux <- pop[1]*expOutputA[indIt]*(expOutputS[, indIt]%o%expOutputG[, indIt])
+    sCasesAll <- sCasesAll + termAux
+    eCasesAll <- eCasesAll + (termAux*exp(outputB[kToGroups, indIt]*matrixX[iToGroups, kToGroups])) # (10:11)*1:5%o%3:4
+    # last term: if dimBeta = 3 and dimToInclude == c(1,3)!!!!
+  } # ~1min
+}
+
+# Plot time series* (TG only) ----
+# Requires 38_12.R/5./'Compute expected number of cases per week (TG)' (just previous section, first block)
 # (as in 33d.R/11.)
-weeksInfo <- weeksForModels # to mimic previous code
-str(outputS)
-str(y)
-weeksInfo[order(row), numCases := apply(y, 1, sum)]
-weeksInfo[order(row), eCases := apply(epiclustR:::ssapply(mod, epiclustR:::extract_variable, "ecases"), 1, mean)] #weekId or row
-weeksInfo[order(row), sCases := apply(epiclustR:::ssapply(mod, epiclustR:::extract_variable, "scases"), 1, mean)] #weekId or row
-
-eCasesAll_col <- apply(eCasesAll, 1:2, mean)
-sCasesAll_col <- apply(sCasesAll, 1:2, mean)
-#e.g. eCasesAll_col[regionsForModels[region == 26, col], which(subsetG %in% genomeForModels[clusterHighId == 238, col])]
-casesForModels[probaOutbreak > THRESHOLD,
-               ecasesBlock := mapply(function(x, y) sum(eCasesAll_col[regionsForModels[region == x, col], which(subsetG %in% genomeForModels[clusterHighId == y, col])]),
-                                     region, clusterHighId)]
-casesForModels[probaOutbreak > THRESHOLD,
-               scasesBlock := mapply(function(x, y) sum(sCasesAll_col[regionsForModels[region == x, col], which(subsetG %in% genomeForModels[clusterHighId == y, col])]),
-                                     region, clusterHighId)]
-
-dataToPlot <- data.table(melt(weeksInfo, id.vars = c("weekId", "label", "isLabel"), measure.vars = c("numCases", "eCases", "sCases")))
-g23 <- ggplot(dataToPlot, aes(x = weekId, y = value, colour = variable, size = variable)) + geom_line() + theme_laura(size = 16) +
+dataToPlot <- data.table(melt(weeksForModels, id.vars = c("weekId", "label", "isLabel"), measure.vars = c("observed", "total", "sporadic")))
+g13 <- ggplot(dataToPlot, aes(x = weekId, y = value, colour = variable, size = variable)) + geom_line() + theme_laura(size = 16) +
   theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5)) +
   labs(x = "", y = "", colour = "", size = "", subtitle = ifelse(typ == "OX", "Oxfordshire", "Newcastle upon Tyne - North Tyneside")) +
-  scale_x_continuous(breaks = weeksInfo[isLabel == T][order(weekId), weekId],
-                     labels = weeksInfo[isLabel == T][order(weekId), label]) +
-  scale_y_continuous(breaks = seq(0, max(weeksInfo$numCases), 5)) +
+  scale_x_continuous(breaks = weeksForModels[isLabel == T][order(weekId), weekId],
+                     labels = weeksForModels[isLabel == T][order(weekId), label]) +
+  scale_y_continuous(breaks = seq(0, max(weeksForModels$observed), 5)) +
   scale_color_manual(values = c("gray70", "red", "black"), labels = c("observed cases", "outbreak cases", "sporadic cases")) +
   scale_size_manual(values = c(0.4,0.4,0.8), labels = c("observed cases", "outbreak cases", "sporadic cases")) +
   theme(legend.position = c(0.14, 0.9), legend.background = element_rect(colour = "transparent", fill = "transparent"))
+g13
+
+# Plot time series per type (TG only) ----
+# Requires 38_12.R/5./'Compute expected number of cases per week (TG)' (just previous/previous section, second block)
+for(typeToPlotIndex in 1:length(typeToPlotList)){
+  typeToPlot <- typeToPlotList[[typeToPlotIndex]]
+  # casesForModels[ccNum == typeToPlot, ] # note all low groups have a unique ST
+  
+  weeksForModels[, sporadicST := apply(sCasesRList[[typeToPlotIndex + 1]], 1, median)[weekId]]
+  weeksForModels[, totalST := apply(eCasesRList[[typeToPlotIndex + 1]], 1, median)[weekId]]
+  weeksForModels[, observedST := apply(y[,,indicesGToPlot[[typeToPlotIndex + 1]], drop = FALSE], dimForPlot, sum)[weekId]]
+  dataToPlot <- data.table(melt(weeksForModels, id.vars = c("weekId", "label", "isLabel"), measure.vars = c("observedST", "totalST", "sporadicST")))
+  g13ST <- ggplot(dataToPlot, aes(x = weekId, y = value, colour = variable, size = variable)) + geom_line() + theme_laura(size = 16) +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5)) +
+    labs(x = "", y = "", colour = "", size = "", subtitle = ifelse(typ == "OX", "Oxfordshire", "Newcastle upon Tyne - North Tyneside"), title = typeToPlot) +
+    scale_x_continuous(breaks = weeksForModels[isLabel == T][order(weekId), weekId],
+                       labels = weeksForModels[isLabel == T][order(weekId), label]) +
+    scale_y_continuous(breaks = seq(0, max(weeksForModels$observed), 5)) +
+    scale_color_manual(values = c("gray70", "red", "black"), labels = c("observed cases", "outbreak cases", "sporadic cases")) +
+    scale_size_manual(values = c(0.4,0.4,0.8), labels = c("observed cases", "outbreak cases", "sporadic cases")) +
+    theme(legend.position = c(0.14, 0.9), legend.background = element_rect(colour = "transparent", fill = "transparent"))
+  print(g13ST)
+}
+# 283 574
+# 52 257 828 21
 
 # Distance within outbreaks (TG only) ----
 setkey(casesForModels, idInDataLSOA)
@@ -1047,7 +1073,7 @@ uploadPackages(c("ggplogt2", "ggdendro"))
 load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18122019_ClustersKInfo_OX.RData")
 # (Created in 38_01_V2.R/II.) hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups*
 dd <- ggdendrogram(hClustOut, theme_dendro = FALSE) # ~ 5sec
-gDd <- dd + geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = 10, ymax = 130), alpha = 0.5, fill = "#A7333F") + geom_hline(yintercept = c(10, 50), colour = "#F2DD6E", size = 1.2) + # 74121D
+gDd <- dd + geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = 10, ymax = 130), alpha = 0.5, fill = "#A7333F") + geom_hline(yintercept = c(10, 50), colour = "#F2DD6E", size = 1.2) +
   theme_laura() + labs(x = "sequences", y = "height") +# FFE0B5
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
         axis.ticks.y = element_line(size = 0.5), axis.text.y = element_text(hjust = 0.5, margin = margin(t = 0, r = 5, b = 0, l = 0))) +

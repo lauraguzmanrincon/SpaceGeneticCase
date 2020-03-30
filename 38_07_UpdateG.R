@@ -79,7 +79,7 @@ if(config$ifGUpdate){
       muB <- invDeltaMatrix[dim3ClusterIndexes, dim3ClusterComplement]
       muC <- parameters$G[dim3ClusterComplement]
       
-      muSample <- muA%*%muB%*%muC
+      muSample <- -muA%*%muB%*%muC
       sigmaSample <- muA/parameters$tau.G
       proposalGKnorr <- mvrnorm(n = 1, mu = muSample, Sigma = sigmaSample)
       

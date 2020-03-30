@@ -7,7 +7,7 @@
 #           26.02.2020: Add block update for G
 # ------------------------------ #
 
-runTinis <- 0 # !!!!!!!!!!!!!!!!!!!!!
+runTinis <- 1 # !!!!!!!!!!!!!!!!!!!!!
 simulatedData <- 0
 typeModel <- "TG"
 
@@ -25,7 +25,7 @@ if(runTinis == 0){
     # 1. Create/load data ----
     # TODO organise
     dimToInclude <- sort(c(1,3)) # T S G # Never do the three of them!
-    lengthBlockPeriod <- 1 # should be 1 if 1 is not in dimToInclude!!!
+    lengthBlockPeriod <- 4 # should be 1 if 1 is not in dimToInclude!!!
     dimBeta <- 3 # dimension where B is gonna change (2 or 3 or 123) # if 123 numBeta must be ignored TODO check
     heighCutLow <- 10 #   50  10   NO1
     heighCutHigh <- 50 #  300 50  NO25
@@ -38,7 +38,7 @@ if(runTinis == 0){
       #NOTE:length(unique(casesForModels$clusterLowId)) == numSequences
       if(typeModel == "SG"){
         # CURRENT ONE for SG:
-        load("07_MixedModelsP2/RCode_201912/38_01_18122019_MCMCInput_GOX.RData") # CONFIG: inputForData OR notsim,dims23,interval3,beta3,cuts10/50,regionOXMSOA
+        load("07_MixedModelsP2/RCode_201912/38_01_18122019_MCMCInput_GOX.RData") # CONFIG: inputForData OR notsim,dims23,interval3?,beta3,cuts10/50,regionOXMSOA
         # used for 38_00_18122019, 38_00_02012020_newprior, 38_00_04012020_newprior, 38_00_06012020_newprior[*]
         #load("07_MixedModelsP2/RCode_201912/38_01_06012020_MCMCInput_GOX2.RData") # CONFIG: inputForData OR notsim,dims23,interval3,beta3,cuts1/25,regionOXMSOA
         # used for 38_00_06012020_newradii
@@ -46,7 +46,8 @@ if(runTinis == 0){
         # used for 38_00_06012020_newradii2
       }else if(typeModel == "TG"){
         # CURRENT ONE for TG:
-        load("07_MixedModelsP2/RCode_202002/38_01_05032020_MCMCInput_TGOX.RData") # CONFIG: inputForData OR notsim,dims13,interval3,beta3,cuts10/50,regionOXMSOA
+        #load("07_MixedModelsP2/RCode_202002/38_01_05032020_MCMCInput_TGOX.RData") # CONFIG: inputForData OR notsim,dims13,interval1,beta3,cuts10/50,regionOXMSOA
+        load("07_MixedModelsP2/RCode_202002/38_01_29032020_MCMCInput_TGOX.RData") # CONFIG: inputForData OR notsim,dims13,interval4,beta3,cuts10/50,regionOXMSOA
       }
       length(unique(casesForModels$clusterLowId)) == numSequences
       load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18122019_ClustersKInfo_OX.RData") # add clustering for G block update! 26.02.2020
@@ -113,9 +114,11 @@ nameOutput <- "38_00_0503202001_TinisTG_MAT12.RData" # tauG: 1,0.01 rho: 10,0.5 
 nameOutput <- "38_00_0503202001_TinisTG_MAT12_500it.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5
 # Running SG for all cutting points
 nameOutput <- "38_00_1403202001_TinisSG_MAT12_1000it_cuts.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5
-# Running TG with S block update to improve mixing 17.03.2020
-nameOutput <- "38_00_1703202001_TinisTG_MAT12_500it_Sblock.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5
-nameOutput <- "BORRAR"
+# Running TG with S block update to improve mixing 17.03.2020 + other intervals for weeks 29.03.2020
+nameOutput <- "38_00_1703202001_TinisTG_MAT12_1000it_Sblock.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 interval:1
+nameOutput <- "38_00_2903202001_TinisTG_MAT12_5000it_Sblock.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 interval:1
+nameOutput <- "38_00_2903202001_TinisTG_MAT12_1000it_Interval4.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 interval:4
+#nameOutput <- "BORRAR"
 
 # 2. Set-up environment ----
 source(paste0(dirFiles, "38_02_AuxiliarFn.R"))
@@ -204,7 +207,7 @@ matrixXBexp <- exp(matrixX*matrixB)
 # 5. Iterations ----
 counter <- Sys.time()
 numIterations <- config$numIterations
-cat("HOLA", sum(y), "\n")
+cat("HOLA", sum(y, na.rm = T), "\n")
 for (it in 1:numIterations) {# 1:numIterations  (numIterations + 1):(2*numIterations)
   cat(it, "\n")
   x <- sqrt(2)
@@ -258,7 +261,7 @@ for (it in 1:numIterations) {# 1:numIterations  (numIterations + 1):(2*numIterat
   storage$parameters$p[it] <- parameters$p
   storage$parameters$l[it] <- parameters$l
   storage$parameters$cutHeight[it] <- parameters$cutHeight # 27.02.2020
-  storage$parameters$sBlockSize[it] <- parameters$sBlockSize # 17.03.2020
+  storage$parameters$sBlockSize[,it] <- parameters$sBlockSize # 17.03.2020
   
   # Store expected number of cases
   # TODO test
