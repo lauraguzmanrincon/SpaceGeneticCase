@@ -1,6 +1,7 @@
 # All sections require 0. 1. 2.
 # Never re-run 0. (may overwrite some variables)
 # Run to 2. and 3. if MCMC just finished and wanna check output
+# In 1. choose input dir, input file name, output dir, and output file name/names
 
 if(0){
   # 0. Load workspace ----
@@ -107,10 +108,12 @@ dirInputFiles <- "07_MixedModelsP2/RCode_201912/"
 nameFiles <- "18122019_MCMCInput_GOX"
 nameFilesOut <- "1403202001_TinisSG_MAT12_1000it_cuts" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 # 854452
 dirOutputFiles <- "/home/laura/Documents/PhD_Year3_NoDropbox/07_MixedModelsP2/RCode_202003/"
+
 # Other parameters
 simulatedDataRes <- 0
 multipleOutFiles <- length(nameFilesOut) != 1 # the multiple outputs shpuld be identical, just different chains # supported only for non-simulated runs
 typ <- "OX"
+numSTGroups <- 1 # since some files do not have this variable
 dirInputFile <- paste0(dirInputFiles, "38_01_", nameFiles, ".RData")
 load(dirInputFile) # ...
 if(simulatedDataRes == 0){
@@ -236,6 +239,16 @@ if(!1 %in% dimToInclude){
   setkeyv(outProbs, c("row", "col"))
   casesForModels[outProbs, c("idOutbreak", "probaOutbreak") := .(id, proba)]
   casesForModels[, sizeOutbreak := .N, idOutbreak]
+}
+# Add ST info
+if(3 %in% dimToInclude){
+  setkey(casesForModels, columnInDataAlleles)
+  setkey(dataInfo, columnInDataAlleles)
+  casesForModels[dataInfo, idIsolate := id]
+  setkey(casesForModels, idIsolate)
+  setkey(dataAnnotatedList[[2]], id)
+  casesForModels[dataAnnotatedList[[2]], cc := clonal_complex..MLST.]
+  casesForModels[, ccNum := as.integer(gsub("ST-| complex", "", cc))]
 }
 
 
@@ -445,22 +458,25 @@ if(config$maternParameter == 1/2){
   
 # 4. MCMC output: formal chain visualisation (table, plots) ----
 # Requires: 0. 1. 2.
-# Plot traces* ----
+# Plot traces* ONLY IF 1 CHAIN AND NOT FOR FINAL DOCUMENT ----
 # copied and adapted from 36d_V2.R/9.Traces
+# UPDATE 01.04.2020: Put index of parameters plotted. E.G.: BEFORE: variable = "G[k]" AFTER: variable = paste0("G[k = ",sampleGPlot,"]")
 sampleSPlot <- sample(1:numWeeks, 1)
 sampleRPlot <- sample(1:numRegions, 1)
-sampleBPlot <- sample(1:numRegionsGroups, 1)
+sampleBPlot <- sample(1:((dimBeta == 1)*numWeeksGroups + (dimBeta == 2)*numRegionsGroups + (dimBeta == 3)*numSequenceGroups), 1)
 sampleGPlot <- sample(1:numSequences, 1)
 sampleGPlot
-plotTraces <- rbind(data.table(id = 2, variable = "tau[G]", iteration = 1:length(finalIterations), chain = 1, value = outputTauG[iterationsToPlot]),
+sampleSPlot
+sampleBPlot
+plotTraces <- rbind(data.table(id = 1, variable = "tau[G]", iteration = finalIterations, chain = 1, value = outputTauG[iterationsToPlot]),
                     #data.table(id = 1, variable = "tau[U]", iteration = 1:length(finalIterations), chain = 1, value = outputTauR[iterationsToPlot]), # SG
-                    data.table(id = 2, variable = "tau[R]", iteration = 1:length(finalIterations), chain = 1, value = outputTauS[iterationsToPlot]), # TG
-                    data.table(id = 3, variable = "p", iteration = 1:length(finalIterations), chain = 1, value = outputP[iterationsToPlot]),
-                    #data.table(id = 5, variable = "U[i]", iteration = 1:length(finalIterations), chain = 1, value = outputR[sampleRPlot, iterationsToPlot]), # SG
-                    data.table(id = 4, variable = "G[k]", iteration = 1:length(finalIterations), chain = 1, value = outputG[sampleGPlot, iterationsToPlot]),
-                    data.table(id = 4, variable = "R[t]", iteration = 1:length(finalIterations), chain = 1, value = outputS[sampleRPlot, iterationsToPlot]), # TG
+                    data.table(id = 2, variable = "tau[R]", iteration = finalIterations, chain = 1, value = outputTauS[iterationsToPlot]), # TG
+                    data.table(id = 3, variable = "p", iteration = finalIterations, chain = 1, value = outputP[iterationsToPlot]),
+                    #data.table(id = 5, variable = paste0("U[i = ",sampleRPlot,"]"), iteration = finalIterations, chain = 1, value = outputR[sampleRPlot, iterationsToPlot]), # SG
+                    data.table(id = 4, variable = paste0("G[k = ",sampleGPlot,"]"), iteration = finalIterations, chain = 1, value = outputG[sampleGPlot, iterationsToPlot]),
+                    data.table(id = 5, variable = paste0("R[t = ",sampleSPlot,"]"), iteration = finalIterations, chain = 1, value = outputS[sampleSPlot, iterationsToPlot]), # TG
                     #data.table(id = 1, variable = "Xjk", melt(epiclustR:::ssapply(modTr, epiclustR:::extract_variable, "X")[17,40,,])),
-                    data.table(id = 6, variable = "B[sigma]", iteration = 1:length(finalIterations), chain = 1, value = outputB[sampleBPlot, iterationsToPlot]))
+                    data.table(id = 6, variable = paste0("B[sigma = ",sampleBPlot,"]"), iteration = finalIterations, chain = 1, value = outputB[sampleBPlot, iterationsToPlot]))
 plotTraces[, variableFc := factor(variable, levels = unique(plotTraces[order(id), variable]))]
 # .Plot traces
 gtr <- ggplot(plotTraces, aes(x = iteration, y = value, colour = factor(chain))) +
@@ -472,6 +488,7 @@ gtr#savePDF(gtr, fileName = "Plot17102019_02_36d_Traces", 8, 7)
 #savePDF(gtr, fileName = "Plot05122019_02_38p12c4_0312201901_Tinis_OX_Traces", 8, 7)
 #savePDF(gtr, fileName = "Plot06032020_11_38p12c4_05032020_Tinis_OXTG_Traces_noconvergence", 8, 7)
 #savePDF(gtr, fileName = "Plot06032020_12_38p12c4_05032020_Tinis_OXTG_Traces_noconvergence_condUp", 8, 7)
+#savePDF(gtr, fileName = "Plot02042020_01_38p12c4_1703202001_Tinis_OXTGI1_Traces_5000it_Sblock_PARTIAL", 8, 7)
 
 # 5. MCMC output: results visualisation ----
 # Requires: 0. 1. 2.
@@ -934,8 +951,8 @@ ghist <- ggplot(dataToPlot[value < 1000]) + geom_histogram(aes(x = value, y = ..
 ghist#savePDF(ghist, fileName = "Plot30012020_01_38p12c5_18122019Input_HistClust", 8, 4) # warning
 
 # 29.03.2020
-# Compute expected number of cases per week (TG only) ----
-# As in 5./'Expected number of cases per genome'
+# Timeseries P1: Compute expected number of cases per week* (TG only) ----
+# As in 5./'Expected number of cases per genome'. Adapted from 33d.R/11.
 # Might be adaptable for other dimensions!!!!!!!!!!!!!!!!!!!!!! TODO
 # Both blocks are similar. First stores info per week per iteration. Second stores info per week per sequence. First one if wants .95 bands. Second if want genetic subplots.
 
@@ -943,6 +960,7 @@ subsetIterations <- finalIterations
 
 typeToPlotList <- casesForModels[!is.na(ccNum), .N, ccNum][order(-N), ccNum]
 indicesGToPlot <- append(list(1:numSequences), lapply(typeToPlotList, function(tt) casesForModels[ccNum == tt, unique(sort(clusterLowId))]))
+indicesRToPlot <- rep(list(1:numWeeks), length(indicesGToPlot)) # ONLY to make plots for TG2 possible using the same code
 sCasesRList <- vector("list", length(indicesGToPlot))
 eCasesRList <- vector("list", length(indicesGToPlot))
 
@@ -972,13 +990,14 @@ if(1){
     }
   } # ~1min # plotMatrix(sCasesR)
   dimForPlot <- 1
-  weeksForModels[, sporadic := apply(sCasesRList[[1]], dimForPlot, median)[weekId]]
-  weeksForModels[, total := apply(eCasesRList[[1]], dimForPlot, median)[weekId]]
-  weeksForModels[, observed := apply(y[,,indicesGToPlot[[1]]], dimForPlot, sum)[weekId]]
-  weeksForModels[, year := year(received_date_nextFriday)]
-  weeksForModels[, label := paste0(month.abb[month(received_date_nextFriday)], "\n", year(received_date_nextFriday))]
-  weeksForModels[, isFirst := min(received_date_nextFriday), by = year]
-  weeksForModels[, isLabel := ifelse(isFirst == received_date_nextFriday | weekId == max(weekId), TRUE, FALSE)]
+  weeksForModelsToPlot <- weeksForModels[row %in% 1:(numWeeks/numSTGroups)] # trick for plotting TG and TG2
+  weeksForModelsToPlot[, sporadic := apply(sCasesRList[[1]], dimForPlot, median)[weekId]]
+  weeksForModelsToPlot[, total := apply(eCasesRList[[1]], dimForPlot, median)[weekId]]
+  weeksForModelsToPlot[, observed := apply(y, dimForPlot, sum)[weekId]]
+  weeksForModelsToPlot[, year := year(received_date_nextFriday)]
+  weeksForModelsToPlot[, label := paste0(month.abb[month(received_date_nextFriday)], "\n", year(received_date_nextFriday))]
+  weeksForModelsToPlot[, isFirst := min(received_date_nextFriday), by = year]
+  weeksForModelsToPlot[, isLabel := ifelse(isFirst == received_date_nextFriday | weekId == max(weekId), TRUE, FALSE)]
 }else{ # WRONG because mean does not work... don't know why!
   sCasesAll <- matrix(0, nrow = numWeeks, ncol = numSequences)
   eCasesAll <- matrix(0, nrow = numWeeks, ncol = numSequences)
@@ -995,46 +1014,85 @@ if(1){
   } # ~1min
 }
 
-# Plot time series* (TG only) ----
-# Requires 38_12.R/5./'Compute expected number of cases per week (TG)' (just previous section, first block)
+# Timeseries P2: Plot time series* (TG/TG2 only) ----
+# Requires 38_12.R/5./'Timeseries P1' OR 49.R/3. if TG2
 # (as in 33d.R/11.)
-dataToPlot <- data.table(melt(weeksForModels, id.vars = c("weekId", "label", "isLabel"), measure.vars = c("observed", "total", "sporadic")))
+dataToPlot <- data.table(melt(weeksForModelsToPlot, id.vars = c("weekId", "label", "isLabel"), measure.vars = c("observed", "total", "sporadic")))
 g13 <- ggplot(dataToPlot, aes(x = weekId, y = value, colour = variable, size = variable)) + geom_line() + theme_laura(size = 16) +
   theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5)) +
   labs(x = "", y = "", colour = "", size = "", subtitle = ifelse(typ == "OX", "Oxfordshire", "Newcastle upon Tyne - North Tyneside")) +
-  scale_x_continuous(breaks = weeksForModels[isLabel == T][order(weekId), weekId],
-                     labels = weeksForModels[isLabel == T][order(weekId), label]) +
-  scale_y_continuous(breaks = seq(0, max(weeksForModels$observed), 5)) +
-  scale_color_manual(values = c("gray70", "red", "black"), labels = c("observed cases", "outbreak cases", "sporadic cases")) +
+  scale_x_continuous(breaks = weeksForModelsToPlot[isLabel == T][order(weekId), weekId],
+                     labels = weeksForModelsToPlot[isLabel == T][order(weekId), label]) +
+  scale_y_continuous(breaks = seq(0, max(weeksForModelsToPlot$observed), 5)) +
+  scale_color_manual(values = c("gray70", "red", "black"), labels = c("observed cases", "expected total cases", "expected sporadic cases")) +
   scale_size_manual(values = c(0.4,0.4,0.8), labels = c("observed cases", "outbreak cases", "sporadic cases")) +
   theme(legend.position = c(0.14, 0.9), legend.background = element_rect(colour = "transparent", fill = "transparent"))
-g13
+g13#savePDF(g13, fileName = "Plot02042020_02_38p12_1703202001_Tinis_OXTGI1_Time_5000it_Sblock_PARTIAL", 12, 6)
 
-# Plot time series per type (TG only) ----
-# Requires 38_12.R/5./'Compute expected number of cases per week (TG)' (just previous/previous section, second block)
+# Timeseries P3: Plot time series per type* (TG/TG2 only) ----
+# Requires 38_12.R/5./'Timeseries P1'
+g13ST <- vector("list", length(typeToPlotList))
 for(typeToPlotIndex in 1:length(typeToPlotList)){
   typeToPlot <- typeToPlotList[[typeToPlotIndex]]
   # casesForModels[ccNum == typeToPlot, ] # note all low groups have a unique ST
   
-  weeksForModels[, sporadicST := apply(sCasesRList[[typeToPlotIndex + 1]], 1, median)[weekId]]
-  weeksForModels[, totalST := apply(eCasesRList[[typeToPlotIndex + 1]], 1, median)[weekId]]
-  weeksForModels[, observedST := apply(y[,,indicesGToPlot[[typeToPlotIndex + 1]], drop = FALSE], dimForPlot, sum)[weekId]]
-  dataToPlot <- data.table(melt(weeksForModels, id.vars = c("weekId", "label", "isLabel"), measure.vars = c("observedST", "totalST", "sporadicST")))
-  g13ST <- ggplot(dataToPlot, aes(x = weekId, y = value, colour = variable, size = variable)) + geom_line() + theme_laura(size = 16) +
+  weeksForModelsToPlot[, sporadicST := apply(sCasesRList[[typeToPlotIndex + 1]], 1, median)[weekId]]
+  weeksForModelsToPlot[, totalST := apply(eCasesRList[[typeToPlotIndex + 1]], 1, median)[weekId]]
+  weeksForModelsToPlot[, observedST := apply(y[indicesRToPlot[[typeToPlotIndex + 1]],,indicesGToPlot[[typeToPlotIndex + 1]], drop = FALSE], dimForPlot, sum, na.rm = TRUE)[weekId]]
+  dataToPlot <- data.table(melt(weeksForModelsToPlot, id.vars = c("weekId", "label", "isLabel"), measure.vars = c("observedST", "totalST", "sporadicST")))
+  g13ST[[typeToPlotIndex]] <- ggplot(dataToPlot, aes(x = weekId, y = value, colour = variable, size = variable)) + theme_laura(size = 16) +
+    geom_line() +
+    #NICE BUT NO geom_line() + geom_point(data = dataToPlot[variable == "observedST"], size = 1.5) +
     theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5)) +
-    labs(x = "", y = "", colour = "", size = "", subtitle = ifelse(typ == "OX", "Oxfordshire", "Newcastle upon Tyne - North Tyneside"), title = typeToPlot) +
-    scale_x_continuous(breaks = weeksForModels[isLabel == T][order(weekId), weekId],
-                       labels = weeksForModels[isLabel == T][order(weekId), label]) +
-    scale_y_continuous(breaks = seq(0, max(weeksForModels$observed), 5)) +
-    scale_color_manual(values = c("gray70", "red", "black"), labels = c("observed cases", "outbreak cases", "sporadic cases")) +
-    scale_size_manual(values = c(0.4,0.4,0.8), labels = c("observed cases", "outbreak cases", "sporadic cases")) +
+    labs(x = "", y = "", colour = "", size = "", subtitle = paste(ifelse(typ == "OX", "Oxfordshire", "Newcastle upon Tyne - North Tyneside"), " (ST-",typeToPlot,")", sep = "")) +
+    scale_x_continuous(breaks = weeksForModelsToPlot[isLabel == T][order(weekId), weekId],
+                       labels = weeksForModelsToPlot[isLabel == T][order(weekId), label]) +
+    scale_y_continuous(breaks = seq(0, max(weeksForModelsToPlot$observed), 1)) +
+    scale_color_manual(values = c("gray70", "red", "black"), labels = c("observed cases", "expected total cases", "expected sporadic cases")) +
+    scale_size_manual(values = c(0.4,0.4,0.8), labels = c("observed cases", "expected total cases", "expected sporadic cases")) +
     theme(legend.position = c(0.14, 0.9), legend.background = element_rect(colour = "transparent", fill = "transparent"))
-  print(g13ST)
 }
-# 283 574
-# 52 257 828 21
+# Plot one
+#savePDF(g13ST[[2]], fileName = "Plot02042020_03_38p12_1703202001_Tinis_OXTGI1_TimeST21_5000it_Sblock_PARTIAL", 12, 6)
+# OR plot all # NO: use 5./'Timeseries P3V2'
+#library(patchwork) # #devtools::install_github("thomasp85/patchwork") # play_layout(), wrapt_plots()
+#g13STall <- wrap_plots(g13ST, ncol = 1)
+#NO savePDF(g13STall, fileName = "NOPlot02042020_04_38p12_1703202001_Tinis_OXTGI1_TimeAll_400it_PARTIAL", 12, 20)
 
-# Distance within outbreaks (TG only) ----
+# Timeseries P3V2: Plot time series per type* (TG/TG2 only) ----
+# V2 to plot with facet_grid
+# Requires 38_12.R/5./'Timeseries P1' OR 49.R/3. if TG2
+dataToPlotList <- vector("list", length(typeToPlotList))
+for(typeToPlotIndex in 1:length(typeToPlotList)){
+  typeToPlot <- typeToPlotList[[typeToPlotIndex]]
+  
+  weeksForModelsToPlot[, sporadicST := apply(sCasesRList[[typeToPlotIndex + 1]], 1, median)[weekId]]
+  weeksForModelsToPlot[, totalST := apply(eCasesRList[[typeToPlotIndex + 1]], 1, median)[weekId]]
+  weeksForModelsToPlot[, observedST := apply(y[indicesRToPlot[[typeToPlotIndex + 1]],,indicesGToPlot[[typeToPlotIndex + 1]], drop = FALSE], dimForPlot, sum, na.rm = TRUE)[weekId]]
+  dataToPlotList[[typeToPlotIndex]] <- data.table(melt(weeksForModelsToPlot, id.vars = c("weekId", "label", "isLabel"), measure.vars = c("observedST", "totalST", "sporadicST")))
+  dataToPlotList[[typeToPlotIndex]][, type := ifelse(is.na(typeToPlot), "Other", paste0("ST-", typeToPlot))]
+  dataToPlotList[[typeToPlotIndex]][, typeId := typeToPlotIndex]
+}
+dataToPlot <- do.call(rbind, dataToPlotList)
+dataToPlot[, typeFactor := factor(type, levels = dataToPlot[order(typeId), .N, type]$type)]
+g13STall <- ggplot(dataToPlot, aes(x = weekId, y = value, colour = variable, size = variable)) + theme_laura(size = 25) + facet_grid(typeFactor ~ ., scales = "free_y") +
+  geom_line() +
+  #NICE BUT NO geom_line() + geom_point(data = dataToPlot[variable == "observedST"], size = 1.5) +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5)) +
+  labs(x = "", y = "", colour = "", size = "") +
+  scale_x_continuous(breaks = weeksForModelsToPlot[isLabel == T][order(weekId), weekId],
+                     labels = weeksForModelsToPlot[isLabel == T][order(weekId), label]) +
+  scale_y_continuous(breaks = seq(0, max(weeksForModelsToPlot$observed), 2)) + # CHOOSE depending on each case
+  #scale_y_continuous(breaks = pretty_breaks()) +
+  scale_color_manual(values = c("gray70", "red", "black"), labels = c("observed cases", "expected total cases", "expected sporadic cases")) +
+  scale_size_manual(values = c(0.4,0.4,0.8), labels = c("observed cases", "expected total cases", "expected sporadic cases")) +
+  theme(legend.position = c(0.14, 0.9), legend.background = element_rect(colour = "transparent", fill = "transparent")) +
+  theme(strip.background = element_rect(fill = NA, colour = "gray90"), strip.text.y = element_text(angle = 0),
+        legend.key = element_rect(fill = "white"), legend.key.width = unit(30,"pt")) + theme(legend.position = "bottom")
+g13STall#savePDF(g13STall, fileName = "Plot02042020_04_38p12_1703202001_Tinis_OXTGI1_TimeAll_400it_PARTIAL", 15, 20)
+#savePDF(g13STall, fileName = "Plot02042020_05_38p12_3003202001_Tinis_OXTGI4_TimeAll_1000it_PARTIAL", 15, 20)
+
+# Distance within outbreaks* (TG only) ----
 setkey(casesForModels, idInDataLSOA)
 setkey(dataLSOA, id)
 casesForModels[dataLSOA, c("xCoord", "yCoord") := .(xCoord, yCoord)]
@@ -1062,9 +1120,11 @@ gTOut <- ggplot(dataToPlot[sizeOutbreak > 1], aes(x = probaOutbreak, y = maxDist
   labs(x = TeX("probability of outbreak $\\rho_{\\sigma\\xi}$"), y = TeX("max. distance within block $\\sigma\\xi$ (km)"))
 gTOut#savePDF(gTOut, fileName = "Plot06032020_10_38p12c5_05032020_M12_TimeComp", 8, 5.5)
 #savePDF(gTOut, fileName = "Plot17032020_08BORR_38p12c5_17032020_M12_TimeComp", 8, 5.5)
+#savePDF(gTOut, fileName = "Plot02042020_06_38p12c5_3003202001_Tinis_OXTGI4_TimeComp_1000it_PARTIAL", 8, 5.5)
 
 # Outbreak table* (TG only) ----
 # TODO
+
 
 # Dendogram of cuts ----
 # Do not require 0. 1.

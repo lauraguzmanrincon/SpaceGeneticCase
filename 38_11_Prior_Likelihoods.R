@@ -2,6 +2,7 @@
 # Parameters: a, Gk, Si, Rj, Xij, Bl
 # Hyperparameters: Tr, Ts, Tk, l, p
 # These functions compute the priors and likelihoods of a, Gk, Rj, Si, Bl
+# 30.03.2020: added , na.rm = T to all likelihoods
 
 # Parameter a ----
 lpriorA <- function(a){
@@ -9,7 +10,7 @@ lpriorA <- function(a){
   return(value)
 }
 llA <- function(a){
-  value <- sum(y*a - matrixPop*exp(a)*matrixGexp*matrixSexp*matrixRexp*matrixXBexp)
+  value <- sum(y*a - matrixPop*exp(a)*matrixGexp*matrixSexp*matrixRexp*matrixXBexp, na.rm = T)
   return(value)
 }
 
@@ -20,7 +21,7 @@ lpriorG <- function(k, Gk){
   return(value)
 }
 llG <- function(k, Gk){
-  value <- sum(y[,,k]*Gk - matrixPop[,,k]*exp(parameters$a)*exp(Gk)*matrixSexp[,,k]*matrixRexp[,,k]*matrixXBexp[,,k])
+  value <- sum(y[,,k]*Gk - matrixPop[,,k]*exp(parameters$a)*exp(Gk)*matrixSexp[,,k]*matrixRexp[,,k]*matrixXBexp[,,k], na.rm = T)
   return(value)
 }
 
@@ -32,7 +33,7 @@ lpriorS <- function(i, Si){
   return(value)
 }
 llS <- function(i, Si){
-  value <- sum(y[i,,]*Si - matrixPop[i,,]*exp(parameters$a)*matrixGexp[i,,]*exp(Si)*matrixRexp[i,,]*matrixXBexp[i,,])
+  value <- sum(y[i,,]*Si - matrixPop[i,,]*exp(parameters$a)*matrixGexp[i,,]*exp(Si)*matrixRexp[i,,]*matrixXBexp[i,,], na.rm = T)
   return(value)
 }
 
@@ -44,10 +45,10 @@ lpriorB <- function(j, Bl){
 llB <- function(l, Bl){
   if(dimBeta == 2){
     value <- sum(y[,jToGroups == l,]*matrixX[,jToGroups == l,]*Bl - matrixPop[,jToGroups == l,]*exp(parameters$a)*matrixGexp[,jToGroups == l,]*
-                   matrixSexp[,jToGroups == l,]*matrixRexp[,jToGroups == l,]*exp(matrixX[,jToGroups == l,]*Bl))
+                   matrixSexp[,jToGroups == l,]*matrixRexp[,jToGroups == l,]*exp(matrixX[,jToGroups == l,]*Bl), na.rm = T)
   }else{
     value <- sum(y[,,kToGroups == l]*matrixX[,,kToGroups == l]*Bl - matrixPop[,,kToGroups == l]*exp(parameters$a)*matrixGexp[,,kToGroups == l]*
-                   matrixSexp[,,kToGroups == l]*matrixRexp[,,kToGroups == l]*exp(matrixX[,,kToGroups == l]*Bl))
+                   matrixSexp[,,kToGroups == l]*matrixRexp[,,kToGroups == l]*exp(matrixX[,,kToGroups == l]*Bl), na.rm = T)
   }
   return(value)
 }
@@ -60,7 +61,7 @@ lpriorBijk <- function(i, j, k, Bijk){
 llBijk <- function(i, j, k, Bijk){
   value <- sum(y[iToGroups == i,jToGroups == j,kToGroups == k]*matrixX[iToGroups == i,jToGroups == j,kToGroups == k]*Bijk - matrixPop[iToGroups == i,jToGroups == j,kToGroups == k]*
                  exp(parameters$a)*matrixGexp[iToGroups == i,jToGroups == j,kToGroups == k]*matrixSexp[iToGroups == i,jToGroups == j,kToGroups == k]*
-                 matrixRexp[iToGroups == i,jToGroups == j,kToGroups == k]*exp(matrixX[iToGroups == i,jToGroups == j,kToGroups == k]*Bijk))
+                 matrixRexp[iToGroups == i,jToGroups == j,kToGroups == k]*exp(matrixX[iToGroups == i,jToGroups == j,kToGroups == k]*Bijk), na.rm = T)
   return(value)
 }
 
@@ -70,7 +71,7 @@ lpriorR <- function(j, Rj){
   return(value)
 }
 llR <- function(j, Rj){
-  value <- sum(y[,j,]*Rj - matrixPop[,j,]*exp(parameters$a)*matrixGexp[,j,]*matrixSexp[,j,]*exp(Rj)*matrixXBexp[,j,])
+  value <- sum(y[,j,]*Rj - matrixPop[,j,]*exp(parameters$a)*matrixGexp[,j,]*matrixSexp[,j,]*exp(Rj)*matrixXBexp[,j,], na.rm = T)
   return(value)
 }
 
@@ -113,7 +114,7 @@ deltaMatrixFn <- function(l, inputMatrix, sqrInputMatrix, maternParam){
 # 18.12.2019 :)
 # Overall likelihood ----
 lll <- function(){
-  value <- sum(y*(parameters$a + matrixG + matrixS + matrixR + matrixB*matrixX) - matrixPop*exp(parameters$a)*matrixGexp*matrixSexp*matrixRexp*matrixXBexp)
+  value <- sum(y*(parameters$a + matrixG + matrixS + matrixR + matrixB*matrixX) - matrixPop*exp(parameters$a)*matrixGexp*matrixSexp*matrixRexp*matrixXBexp, na.rm = T)
   return(value)
 }
 
@@ -122,7 +123,7 @@ lll <- function(){
 llGKnorr <- function(kVector, GkVector){
   GkMatrix <- drop(aperm(array(GkVector, dim = c(length(GkVector), numWeeks, numRegions)), perm = c(2,3,1)))
   # Note there is a drop we didn't use before... it seems it was not relevant until we use a block of indices???
-  value <- sum(y[,,kVector]*GkMatrix - matrixPop[,,kVector]*exp(parameters$a)*exp(GkMatrix)*matrixSexp[,,kVector]*matrixRexp[,,kVector]*matrixXBexp[,,kVector])
+  value <- sum(y[,,kVector]*GkMatrix - matrixPop[,,kVector]*exp(parameters$a)*exp(GkMatrix)*matrixSexp[,,kVector]*matrixRexp[,,kVector]*matrixXBexp[,,kVector], na.rm = T)
   return(value)
 }
 
@@ -131,7 +132,7 @@ llGKnorr <- function(kVector, GkVector){
 llSKnorr <- function(iVector, SiVector){
   SiMatrix <- drop(array(SiVector, dim = c(length(SiVector), numRegions, numSequences)))
   # Note there is a drop we didn't use before... it seems it was not relevant until we use a block of indices???
-  value <- sum(y[iVector,,]*SiMatrix - matrixPop[iVector,,]*exp(parameters$a)*exp(SiMatrix)*matrixGexp[iVector,,]*matrixRexp[iVector,,]*matrixXBexp[iVector,,])
+  value <- sum(y[iVector,,]*SiMatrix - matrixPop[iVector,,]*exp(parameters$a)*exp(SiMatrix)*matrixGexp[iVector,,]*matrixRexp[iVector,,]*matrixXBexp[iVector,,], na.rm = T)
   return(value)
 }
 

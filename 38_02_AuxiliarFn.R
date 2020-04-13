@@ -63,27 +63,11 @@ auxFnUpdateX <- Vectorize(function(iInd, jInd) sum(tempCollapsedByK[listDims[[di
 collapseAuxFn <- Vectorize(function(iInd, jInd) sum(matToCollapse[listDims[[dimToInclude[1]]] == iInd, listDims[[dimToInclude[2]]] == jInd]))
 collapseMatrixFn <- function() outer(1:numBlockDims[dimToInclude[1]], 1:numBlockDims[dimToInclude[2]], FUN = collapseAuxFn)
 
-# 24.03.2020
-# Taken from epiclustR TEMPORARLY
-# TODO
-#' block_precision_order_2
-#' 
-#' Computes the precision matrix for a random walk of order 2
-#' of the given block size
-#'
-#' @param n the block size
-#' @return The precision matrix K corresponding to a random walk of order 2.
-block_precision_order_2 <- function(n) {
-  # Generates the structure matrix for a random walk of order 2
-  K<-6*diag(2 + n + 2) # need 2 on either side for ends
-  for (j in 1:nrow(K)) {
-    if (j>2) {K[j,j-2]<-1}
-    if (j>1) {K[j,j-1]<--4}
-    if (j+1<=ncol(K)) {K[j,j+1]<--4}
-    if (j+2<=ncol(K)) {K[j,j+2]<-1}
-  }
-  K[1,1:2] <- K[n+4,n+4:3] <- c(1, -2)
-  K[2,1:2] <- K[n+3,n+4:3] <- c(-2, 5)
-  K
+seasonalCoefficientFn <- function(sizeWeeks){
+  seasonalCoefficientMatrix <- cbind(rep(0,sizeWeeks - 2), rep(0,sizeWeeks - 2), diag(sizeWeeks - 2)) +
+    cbind(rep(0,sizeWeeks - 2), -2*diag(sizeWeeks - 2), rep(0,sizeWeeks - 2)) +
+    cbind(diag(sizeWeeks - 2), rep(0,sizeWeeks - 2), rep(0,sizeWeeks - 2))
+  seasonalCoefficientMatrixSqr <- t(seasonalCoefficientMatrix)%*%seasonalCoefficientMatrix
+  return(seasonalCoefficientMatrixSqr)
 }
 

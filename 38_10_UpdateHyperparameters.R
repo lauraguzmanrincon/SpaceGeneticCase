@@ -70,7 +70,7 @@ if(config$ifTauRUpdate){
 if(config$ifPUpdate){
   # Discussion on whether or not we should use Xij or xsigmatheta... conclusion: the second
   #str(new$mod[[1]][[1]]$X)
-  parameters$p <- rbeta(1, shape1 = sum(parameters$X) + constants$aP, shape2 = sum(1 - parameters$X) + constants$bP)
+  parameters$p <- rbeta(1, shape1 = sum(parameters$X, na.rm = T) + constants$aP, shape2 = sum(1 - parameters$X, na.rm = T) + constants$bP)
 }
 
 

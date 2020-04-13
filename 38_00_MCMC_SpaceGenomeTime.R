@@ -9,7 +9,7 @@
 
 runTinis <- 1 # !!!!!!!!!!!!!!!!!!!!!
 simulatedData <- 0
-typeModel <- "TG"
+typeModel <- "TG2"
 
 if(runTinis == 0){
   if(1){
@@ -31,9 +31,12 @@ if(runTinis == 0){
     heighCutHigh <- 50 #  300 50  NO25
     typeSpatial <- "OX"
     numClustSpatial <- "MSOA"
+    stGeneticGroups <- c(21, 353, 828, 257, 206, 464, 48, 45) # TG2 only # groups not in list are merged in one group # assumed that there are left groups
+    numSTGroups <- 1 # Do NOT modify. For SG and TG.
     if(simulatedData == 0){
       # Construct data
       #source(paste0(dirFiles, "38_01_MCMC_CreateLoadData_V2.R")) # ~ 8 sec
+      #source(paste0(dirFiles, "38_01b_MCMC_CreateLoadData_TG2.R")) # ~ 8 sec # TG2 only
       # Or load (not formal)
       #NOTE:length(unique(casesForModels$clusterLowId)) == numSequences
       if(typeModel == "SG"){
@@ -48,6 +51,10 @@ if(runTinis == 0){
         # CURRENT ONE for TG:
         #load("07_MixedModelsP2/RCode_202002/38_01_05032020_MCMCInput_TGOX.RData") # CONFIG: inputForData OR notsim,dims13,interval1,beta3,cuts10/50,regionOXMSOA
         load("07_MixedModelsP2/RCode_202002/38_01_29032020_MCMCInput_TGOX.RData") # CONFIG: inputForData OR notsim,dims13,interval4,beta3,cuts10/50,regionOXMSOA
+      }else if(typeModel == "TG2"){
+        # CURRENT ONE for TG2:
+        #load("07_MixedModelsP2/RCode_202003/38_01_30032020_MCMCInput_TG2OX.RData") # CONFIG: inputForData OR notsim,dims13,interval1,beta3,cuts10/50,regionOXMSOA
+        load("07_MixedModelsP2/RCode_202003/38_01_30032020_MCMCInput_TG2OX_I4.RData") # CONFIG: inputForData OR notsim,dims13,interval4,beta3,cuts10/50,regionOXMSOA
       }
       length(unique(casesForModels$clusterLowId)) == numSequences
       load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18122019_ClustersKInfo_OX.RData") # add clustering for G block update! 26.02.2020
@@ -118,6 +125,10 @@ nameOutput <- "38_00_1403202001_TinisSG_MAT12_1000it_cuts.RData" # tauG: 1,0.01 
 nameOutput <- "38_00_1703202001_TinisTG_MAT12_1000it_Sblock.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 interval:1
 nameOutput <- "38_00_2903202001_TinisTG_MAT12_5000it_Sblock.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 interval:1
 nameOutput <- "38_00_2903202001_TinisTG_MAT12_1000it_Interval4.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 interval:4
+# TG2
+nameOutput <- "38_00_3003202001_TinisTG2_MAT12_1000it.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 interval:1 # 860901
+nameOutput <- "38_00_3003202001_TinisTG2_MAT12_400it.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 interval:1 # 860917
+nameOutput <- "38_00_3003202001_TinisTG2_MAT12_1000it_I4.RData" # tauG: 1,0.01 rho: 10,0.5 r: 10/50 kernel: 0.5 interval:4 # 861062
 #nameOutput <- "BORRAR"
 
 # 2. Set-up environment ----
@@ -163,11 +174,14 @@ cat("A", parameters$a, "/n")
 
 # Auxiliar matrices
 sqrDistanceMatrix <- distanceMatrixMCMC^2
-if(1 %in% dimToInclude){
-  seasonalCoefficientMatrix <- cbind(rep(0,numWeeks - 2), rep(0,numWeeks - 2), diag(numWeeks - 2)) +
-    cbind(rep(0,numWeeks - 2), -2*diag(numWeeks - 2), rep(0,numWeeks - 2)) +
-    cbind(diag(numWeeks - 2), rep(0,numWeeks - 2), rep(0,numWeeks - 2))
-  seasonalCoefficientMatrixSqr <- t(seasonalCoefficientMatrix)%*%seasonalCoefficientMatrix
+if(1 %in% dimToInclude & typeModel == "TG"){
+  seasonalCoefficientMatrixSqr <- seasonalCoefficientFn(numWeeks)
+}else if(1 %in% dimToInclude & typeModel == "TG2"){
+  seasonalCoefficientMatrixSqr <- matrix(0, nrow = numPeriods, ncol = numPeriods)
+  for(scm in 1:numSTGroups){
+    seasonalCoefficientMatrixSqr[(scm - 1)*numPeriodsPerST + (1:numPeriodsPerST), (scm - 1)*numPeriodsPerST + (1:numPeriodsPerST)] <- seasonalCoefficientFn(numPeriodsPerST)
+  }
+  numSTGroups*sum(abs(seasonalCoefficientFn(numPeriodsPerST))) == sum(abs(seasonalCoefficientMatrixSqr))
 }
 matrixPop <- aperm(array(pop, dim = c(numRegions, numWeeks, numSequences)), perm = c(2,1,3))
 #neighLength <- rowSums(matrixForGMRF)

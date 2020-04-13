@@ -45,43 +45,47 @@ if(config$ifSUpdate){
     cat("S cond. updated ")
   }else if(adaptTypeS == 3){
     # II. (conditional block proposal)
+    # UPDATE 30.03.2020: update all ST groups independently (**)
     randomSize <- sample(x = 1:11, size = 1, replace = TRUE)
     #randomStart <- sample(x = randomSize, size = 1, replace = TRUE)
     randomStart <- 1
     parameters$sBlockSize <- c(randomSize, randomStart)
-    itNumBlocksS <- (randomStart != 1) + ceiling((numWeeks - randomStart + 1)/randomSize)
+    itNumBlocksS <- (randomStart != 1) + ceiling((numWeeks/numSTGroups - randomStart + 1)/randomSize) # **
     
-    for(sBlockIndex in 1:itNumBlocksS){
-      #if(sBlockIndex == 1 & randomStart != 1){
-      #  sBlockIndexes <- 1:(randomStart - 1)
-      #}else{
-      sBlockIndexes <- intersect(randomStart - 1 + (sBlockIndex - 1 - (randomStart != 1))*randomSize + (1:randomSize), 1:numWeeks)
-      #}
-      
-      sBlockComplement <- setdiff(1:numWeeks, sBlockIndexes)
-      
-      # Fahrmeir: construct mu and sigma for proposal
-      muA <- solve(seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockIndexes])
-      muB <- seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockComplement]
-      muC <- parameters$S[sBlockComplement]
-      
-      muSample <- -muA%*%muB%*%muC
-      sigmaSample <- muA/parameters$tau.S
-      
-      # Create proposal
-      proposalSKnorr <- mvrnorm(n = 1, mu = muSample, Sigma = sigmaSample)
-      larSKnorr <- llSKnorr(sBlockIndexes, proposalSKnorr) - llSKnorr(sBlockIndexes, parameters$S[sBlockIndexes])
-      
-      u <- runif(1)
-      if(log(u) < larSKnorr){
-        parameters$S[sBlockIndexes] <- proposalSKnorr
-        storage$accept$ScondUp[sBlockIndexes] <- storage$accept$ScondUp[sBlockIndexes] + 1
-        matrixS[sBlockIndexes,,] <- proposalSKnorr
-        matrixSexp[sBlockIndexes,,] <- exp(proposalSKnorr)
-        #cat("Accepted:")
-      }else{
-        storage$reject$ScondUp[sBlockIndexes] <- storage$reject$ScondUp[sBlockIndexes] + 1
-        #cat("Rejected:")
+    for(scm in 1:numSTGroups){ # **
+      scmIndexes <- (scm - 1)*(numWeeks/numSTGroups) + 1:(numWeeks/numSTGroups) # **
+      for(sBlockIndex in 1:itNumBlocksS){
+        #if(sBlockIndex == 1 & randomStart != 1){
+        #  sBlockIndexes <- 1:(randomStart - 1)
+        #}else{
+        #sBlockIndexes <- intersect(randomStart - 1 + (sBlockIndex - 1 - (randomStart != 1))*randomSize + (1:randomSize), 1:numWeeks)
+        #}
+        sBlockIndexes <- intersect((scm - 1)*(numWeeks/numSTGroups) + randomStart - 1 + (sBlockIndex - 1 - (randomStart != 1))*randomSize + (1:randomSize), 1:numWeeks) # **
+        sBlockComplement <- setdiff(scmIndexes, sBlockIndexes) # **
+        
+        # Fahrmeir: construct mu and sigma for proposal
+        muA <- solve(seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockIndexes])
+        muB <- seasonalCoefficientMatrixSqr[sBlockIndexes, sBlockComplement]
+        muC <- parameters$S[sBlockComplement]
+        
+        muSample <- -muA%*%muB%*%muC
+        sigmaSample <- muA/parameters$tau.S
+        
+        # Create proposal
+        proposalSKnorr <- mvrnorm(n = 1, mu = muSample, Sigma = sigmaSample)
+        larSKnorr <- llSKnorr(sBlockIndexes, proposalSKnorr) - llSKnorr(sBlockIndexes, parameters$S[sBlockIndexes])
+        
+        u <- runif(1)
+        if(log(u) < larSKnorr){
+          parameters$S[sBlockIndexes] <- proposalSKnorr
+          storage$accept$ScondUp[sBlockIndexes] <- storage$accept$ScondUp[sBlockIndexes] + 1
+          matrixS[sBlockIndexes,,] <- proposalSKnorr
+          matrixSexp[sBlockIndexes,,] <- exp(proposalSKnorr)
+          #cat("Accepted:")
+        }else{
+          storage$reject$ScondUp[sBlockIndexes] <- storage$reject$ScondUp[sBlockIndexes] + 1
+          #cat("Rejected:")
+        }
       }
     }
     

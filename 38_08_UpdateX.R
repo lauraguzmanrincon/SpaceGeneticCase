@@ -51,10 +51,10 @@ if(config$ifXUpdate){
   }else{
     expAuxTerm <- exp(auxTerm)
     probaXis1 <- parameters$p/(parameters$p + (1-parameters$p)*expAuxTerm)
-    cat(mean(probaXis1), " ")
+    cat(mean(probaXis1, na.rm = T), " ")
     uX <- matrix(runif(numBlockDims[dimToInclude[1]]*numBlockDims[dimToInclude[2]]), nrow = numBlockDims[dimToInclude[1]], ncol = numBlockDims[dimToInclude[2]])
     proposalX <- 1*(uX < probaXis1)
-    cat(sum(proposalX), " ")
+    cat(sum(proposalX, na.rm = T), " ")
   }
   
   parameters$X <- proposalX
