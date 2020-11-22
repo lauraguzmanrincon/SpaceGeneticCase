@@ -2,6 +2,7 @@
 # Parameters: a, Gk, Si, Rj, Xij, Bl
 # Hyperparameters: Tr, Ts, Tk, l, p
 # These functions compute the priors and likelihoods of a, Gk, Rj, Si, Bl
+# All of them require background variables
 # 30.03.2020: added , na.rm = T to all likelihoods
 
 # Parameter a ----
@@ -133,6 +134,25 @@ llSKnorr <- function(iVector, SiVector){
   SiMatrix <- drop(array(SiVector, dim = c(length(SiVector), numRegions, numSequences)))
   # Note there is a drop we didn't use before... it seems it was not relevant until we use a block of indices???
   value <- sum(y[iVector,,]*SiMatrix - matrixPop[iVector,,]*exp(parameters$a)*exp(SiMatrix)*matrixGexp[iVector,,]*matrixRexp[iVector,,]*matrixXBexp[iVector,,], na.rm = T)
+  return(value)
+}
+
+# 14.04.2020 (check notes)
+# Parameters p10 and 01 for autocorrelated model ----
+lPostP01 <- function(pVal01, countsJumps){
+  value <- (constants$aP01 - 1 + countsJumps[1] + sum(parameters$X[1,]))*log(pVal01) + (constants$bP01 - 1 + countsJumps[2])*log(1 - pVal01) - log(pVal01 + parameters$p10)
+  return(value)
+}
+lPostP10 <- function(pVal10, countsJumps){
+  value <- (constants$aP10 - 1 + countsJumps[3] + sum(1 - parameters$X[1,]))*log(pVal10) + (constants$bP10 - 1 + countsJumps[4])*log(1 - pVal10) - log(parameters$p01 + pVal10)
+  return(value)
+}
+llP01 <- function(pVal01, countsJumps){
+  value <- (countsJumps[1] + sum(parameters$X[1,]))*log(pVal01) + (countsJumps[2])*log(1 - pVal01) - log(pVal01 + parameters$p10)
+  return(value)
+}
+llP10 <- function(pVal10, countsJumps){
+  value <- (countsJumps[3] + sum(1 - parameters$X[1,]))*log(pVal10) + (countsJumps[4])*log(1 - pVal10) - log(parameters$p01 + pVal10)
   return(value)
 }
 

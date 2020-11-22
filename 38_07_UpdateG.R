@@ -97,6 +97,7 @@ if(config$ifGUpdate){
         #NO?sigmaJumps$G[dim3ClusterIndexes] <- sigmaJumps$G[dim3ClusterIndexes]*x^(-0.7857)
       }
     }
+    cat("G updated block ")
   }
   
   

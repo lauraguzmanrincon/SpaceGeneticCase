@@ -68,9 +68,87 @@ if(config$ifTauRUpdate){
 
 # Update p (beta) ----
 if(config$ifPUpdate){
-  # Discussion on whether or not we should use Xij or xsigmatheta... conclusion: the second
-  #str(new$mod[[1]][[1]]$X)
-  parameters$p <- rbeta(1, shape1 = sum(parameters$X, na.rm = T) + constants$aP, shape2 = sum(1 - parameters$X, na.rm = T) + constants$bP)
+  if(autocorrPrior == 0){
+    # Discussion on whether or not we should use Xij or xsigmatheta... conclusion: the second
+    #str(new$mod[[1]][[1]]$X)
+    parameters$p <- rbeta(1, shape1 = sum(parameters$X, na.rm = T) + constants$aP, shape2 = sum(1 - parameters$X, na.rm = T) + constants$bP)
+  }else{
+    if(0){
+      # Using Gibbs (WRONG)
+      # TODO Note initial state of X is 3D while parameters$X is 2D. Note this works because occurs after updating X, where the shape of X changes.
+      # 01: 2-0=2   00: 0-0=0   10: 0-1=-1   11: 2-1=1
+      #sum(table(auxTransform))==prod(numBlockDims) - prod(numBlockDims[2:3])
+      #auxTransform <- 2*parameters$X[2:numWeeksGroups,] - parameters$X[1:(numWeeksGroups - 1),]
+      #parameters$p01 <- rbeta(1, shape1 = sum(auxTransform == 2, na.rm = T) + sum(parameters$X[1,]) + constants$aP01, shape2 = sum(auxTransform == 0, na.rm = T) + constants$bP01)
+      #parameters$p10 <- rbeta(1, shape1 = sum(auxTransform ==-1, na.rm = T) + sum(1 - parameters$X[1,]) + constants$aP10, shape2 = sum(auxTransform == 1, na.rm =T)+constants$bP10)
+    }else if(1){
+      # Using M-H
+      # Compute jump counts
+      # 01: 2-0=2   00: 0-0=0   10: 0-1=-1   11: 2-1=1
+      auxTransform <- 2*parameters$X[2:numWeeksGroups,] - parameters$X[1:(numWeeksGroups - 1),]
+      countJumps <- c(sum(auxTransform == 2), sum(auxTransform == 0), sum(auxTransform == -1), sum(auxTransform == 1))
+      
+      for(repsP in 1:10){
+        if(0){
+          # Proposals (normal proposal) ... too slow to converge
+          proposalP01 <- rnorm(1, parameters$p01, sd = sigmaJumps$p01)
+          proposalP10 <- rnorm(1, parameters$p10, sd = sigmaJumps$p10)
+          
+          if(proposalP01 < 0 | proposalP01 > 1){
+            larP01 <- -Inf
+          }else{
+            larP01 <- lPostP01(proposalP01, countJumps) - lPostP01(parameters$p01, countJumps)
+          }
+          if(proposalP10 < 0 | proposalP10 > 1){
+            larP10 <- -Inf
+          }else{
+            larP10 <- lPostP10(proposalP10, countJumps) - lPostP10(parameters$p10, countJumps)
+          }
+        }else if(0){
+          # Proposals (following the prior)
+          proposalP01 <- rbeta(1, shape1 = constants$aP01, shape2 = constants$bP01)
+          proposalP10 <- rbeta(1, shape1 = constants$aP10, shape2 = constants$bP10)
+          larP01 <- llP01(proposalP01, countJumps) - llP01(parameters$p01, countJumps)
+          larP10 <- llP10(proposalP10, countJumps) - llP10(parameters$p10, countJumps)
+        }else if(1){
+          # Proposals following the prior as if Gibbs could be used
+          proposalP01 <- rbeta(1, shape1 = countJumps[1] + sum(parameters$X[1,]) + constants$aP01, shape2 = countJumps[2] + constants$bP01)
+          proposalP10 <- rbeta(1, shape1 = countJumps[3] + sum(1 - parameters$X[1,]) + constants$aP10, shape2 = countJumps[4] + constants$bP10)
+          larP01 <- llP01(proposalP01, countJumps) - llP01(parameters$p01, countJumps)
+          larP10 <- llP10(proposalP10, countJumps) - llP10(parameters$p10, countJumps)
+        }
+        
+        # Accept/reject
+        up01 <- runif(1)
+        if (log(up01) < larP01) {
+          parameters$p01 <- proposalP01
+          storage$accept$p01 <- storage$accept$p01 + 1
+          sigmaJumps$p01 <- sigmaJumps$p01*x
+          #cat("p01 accepted ")
+        }else{
+          storage$reject$p01 <- storage$reject$p01 + 1
+          sigmaJumps$p01 <- sigmaJumps$p01*x^(-0.7857)
+          #cat("p01 rejected ")
+        }
+        
+        up10 <- runif(1)
+        if (log(up10) < larP10) {
+          parameters$p10 <- proposalP10
+          storage$accept$p10 <- storage$accept$p10 + 1
+          sigmaJumps$p10 <- sigmaJumps$p10*x
+          #cat("p10 accepted ")
+        }else{
+          storage$reject$p10 <- storage$reject$p10 + 1
+          sigmaJumps$p10 <- sigmaJumps$p10*x^(-0.7857)
+          #cat("p10 rejected ")
+        }
+      }
+    }
+    
+    
+    
+    
+  }
 }
 
 

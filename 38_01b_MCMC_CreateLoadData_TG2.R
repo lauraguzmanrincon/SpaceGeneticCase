@@ -69,6 +69,17 @@ setkey(groupSequencesCore, columnInDataAlleles)
 setkey(dataInfoPostSOA, columnInDataAlleles)
 groupSequencesCore[dataInfoPostSOA, isDuplicate := isDuplicate]
 
+# Extra: create unique chosenArea # 14.04.2020
+# Note we only need chosenLSOA, if S is not in the model.
+if(typeSpatial == "OX"){
+  chosenAreas <- chosenAreasOX
+}else if(typeSpatial == "TW"){
+  chosenAreas <- chosenAreasTW
+}else if(typeSpatial == "ALL"){
+  # Note that "ALL" should be used only if S is not in the model, since we rely on epiclustR-Input files
+  chosenAreas <- list(LSOACDs = c(chosenAreasOX$LSOACDs, chosenAreasTW$LSOACDs))
+}
+
 # II. New other data ----
 # 10. Function to load spatial data from 36b files
 #' Load files stored previously. since it is inside a fn, other files are not stored.
@@ -97,21 +108,30 @@ getSpatialFn <- function(typ, size){
 # Only include data in the spatial region
 # NOTE: groupDupId is like a groupChosenId, but it's too complicated to modify it
 colsDistanceMatrixGroupsNoDups <- groupSequencesCore[isDuplicate == FALSE &
-                                                       columnInDataAlleles %in% dataInfoPostSOA[isDuplicate == FALSE & LSOA11CD %in% chosenAreasOX$LSOACDs, columnInDataAlleles],
+                                                       columnInDataAlleles %in% dataInfoPostSOA[isDuplicate == FALSE & LSOA11CD %in% chosenAreas$LSOACDs, columnInDataAlleles],
                                                      sort(unique(groupId))]
-groupSequencesCore[isDuplicate == FALSE & columnInDataAlleles %in% dataInfoPostSOA[isDuplicate == FALSE & LSOA11CD %in% chosenAreasOX$LSOACDs, columnInDataAlleles],
+groupSequencesCore[isDuplicate == FALSE & columnInDataAlleles %in% dataInfoPostSOA[isDuplicate == FALSE & LSOA11CD %in% chosenAreas$LSOACDs, columnInDataAlleles],
                    groupDupId := frank(groupId, ties.method = "dense")] # 
 
 # 8. Partition for k's and distance matrix for chosen clusters
+# UPLOAD Unless hasn't been constructed. Then CHANGE 1 to 0.
 if(1){
   # Source: /home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38_II_27102019_ClustersKInfo.RData
   # Created in: 38V2.R on the 18.11.2019 as in the following block of code
   # Content: hClustOut ddata cat(readme) exploreCutFn clusterInfoFn
   # NOTE that hClustCut has the same ordering as colsDistanceMatrixGroupsNoDups and groupToClusterTable$groupDupId
   #load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18112019_ClustersKInfo.RData")
-  load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18122019_ClustersKInfo_OX.RData") # Adjustment OXADD
-  # hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups*
-  # *added on the 05.12.2019 (forgotten to store link of genomes by mimstake (?))
+  if(typeSpatial == "OX"){
+    load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_201911/38V2_II_18122019_ClustersKInfo_OX.RData") # Adjustment OXADD
+    # hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups*
+    # *added on the 05.12.2019 (forgotten to store link of genomes by mimstake (?))
+  }else if(typeSpatial == "TW"){
+    load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_202004/38V2_II_14042020_ClustersKInfo_TW.RData")
+    # hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups
+  }else if(typeSpatial == "ALL"){
+    load("/home/laura/Dropbox/Laura/PhD_Year3/07_MixedModelsP2/RCode_202004/38V2_II_14042020_ClustersKInfo_ALL.RData")
+    # hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups
+  }
 }else{
   # Already uploaded!
   #load("/home/laura/Dropbox/Laura/PhD_Year2/06_MixedModels/RCode_201903/15_Input_MCMCCorrected04032019.RData")
@@ -199,6 +219,8 @@ if(1){
   }
   #save(hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups, file = "07_MixedModelsP2/RCode_201911/38V2_II_18112019_ClustersKInfo.RData")
   #save(hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups, file = "07_MixedModelsP2/RCode_201911/38V2_II_18122019_ClustersKInfo_OX.RData")
+  #save(hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups, file = "07_MixedModelsP2/RCode_202004/38V2_II_14042020_ClustersKInfo_TW.RData")
+  #save(hClustOut, ddata, readme, exploreCutFn, clusterInfoFn, colsDistanceMatrixGroupsNoDups, file = "07_MixedModelsP2/RCode_202004/38V2_II_14042020_ClustersKInfo_ALL.RData")
 }
 
 # 11. Choose heighCutLow, heighCutHigh (exploration)
@@ -259,7 +281,12 @@ max(weeksForModels$groupId) == numBlockPeriods
 
 # __.3. Create regionsForModels ----
 # NOTE e.g. in 36 files we call it spatialInfo. Do not get confused
-temp <- getSpatialFn(typeSpatial, numClustSpatial) # taken from 36b
+if(!2 %in% dimToInclude & typeSpatial == "ALL"){
+  # TODO check is ok!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  temp <- getSpatialFn("OX", numClustSpatial) # TRICK to avoid problems with ALL
+}else{
+  temp <- getSpatialFn(typeSpatial, numClustSpatial) # taken from 36b
+}
 regionsForModels <- temp$spatialInfo
 matrixForGMRF_nb <- temp$nb
 matrixForGMRF <- temp$matrix
@@ -299,7 +326,7 @@ groupSequencesCore[dataInfoPostSOA, c("STgroupId", "ccNum") := .(STgroupId, ccNu
 
 # __.5. Create casesForModels (as casesInfo in 36b.R/5.) ----
 casesForModels <- dataInfoPostSOA[isDuplicate == FALSE &
-                                    columnInDataAlleles %in% dataInfoPostSOA[isDuplicate == FALSE & LSOA11CD %in% chosenAreasOX$LSOACDs, columnInDataAlleles], # Adjustment OXADD
+                                    columnInDataAlleles %in% dataInfoPostSOA[isDuplicate == FALSE & LSOA11CD %in% chosenAreas$LSOACDs, columnInDataAlleles], # Adjustment OXADD
                                   # & numWeek_corrected <= minWeek + lengthBlockPeriod*numBlockPeriods - 1,
                              .(id, columnInDataAlleles, numWeek_corrected, idInDataLSOA, received_date_nextFriday, LSOA11CD, MSOA11CD, STgroupId, ccNum)]
 setnames(casesForModels, "id", "idInDataInfo")
@@ -471,7 +498,8 @@ save(inputForData,
      #file = "007_MixedModelsP2/RCode_202002/38_01_05032020_MCMCInput_TGOX.RData")
      #file = "007_MixedModelsP2/RCode_202002/38_01_29032020_MCMCInput_TGOX.RData")
      #file = "007_MixedModelsP2/RCode_202003/38_01_30032020_MCMCInput_TG2OX.RData")
-     file = "007_MixedModelsP2/RCode_202003/38_01_30032020_MCMCInput_TG2OX_I4.RData")
+     #file = "007_MixedModelsP2/RCode_202003/38_01_30032020_MCMCInput_TG2OX_I4.RData")
+     file = "007_MixedModelsP2/RCode_202004/38_01_15042020_MCMCInput_TG2ALL_I1.RData")
 
 
 

@@ -13,6 +13,10 @@ initConstants <- function(ma = 0,
                        bB = 0.5,
                        aP = 1,
                        bP = ifelse(dimBeta != 123, numBlockDims[dimBeta] - 1, prod(numBlockDims)),
+                       aP10 = 2,
+                       bP10 = 2,
+                       aP01 = 1,
+                       bP01 = 51,
                        ifPlot = FALSE){
   constants <- list(ma = ma,
                  sa = sa,
@@ -29,7 +33,11 @@ initConstants <- function(ma = 0,
                  aB = aB,
                  bB = bB,
                  aP = aP,
-                 bP = bP)
+                 bP = bP,
+                 aP10 = aP10,
+                 bP10 = bP10,
+                 aP01 = aP01,
+                 bP01 = bP01)
   
   constants$plots <- list()
   if(ifPlot){
@@ -40,7 +48,9 @@ initConstants <- function(ma = 0,
     pL <- plotGammaTruncated(shape = aG, rate = bG, upp = M, xlab = TeX('$\\tau_\\rho'))
     pB <- plotGamma(shape = aB, rate = bB, xlab = "B")
     pP <- plotBeta(shape1 = aP, shape2 = bP, xlab = "X")
-    constants$plots <- list(pA, pR, pS, pG, pL, pB, pP)
+    pP10 <- plotBeta(shape1 = aP10, shape2 = bP10, xlab = "X_10")
+    pP01 <- plotBeta(shape1 = aP01, shape2 = bP01, xlab = "X_01")
+    constants$plots <- list(pA, pR, pS, pG, pL, pB, pP, p10, p01)
   }
   
   return(constants)
@@ -113,8 +123,8 @@ initConfig <- function(numIterations = 100,
 #' parametersVar1: mean
 #' parametersVar2: sd
 #' Note: configUpdates should be the output of initConfig() instead of using the default 13.12.2019
-initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, tR = 3.5, tS = 3.5, tG = 0.5, p = 1, l = 2.5),
-                      parametersVar2 = list(a = 1, R = 1, S = 1, G = 1, B = 1, tR = 1, tS = 1, tG = 0.15, p = 100, l = 0.8),
+initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, tR = 3.5, tS = 3.5, tG = 0.5, p = 1, l = 2.5, p10 = 2, p01 = 1),
+                      parametersVar2 = list(a = 1, R = 1, S = 1, G = 1, B = 1, tR = 1, tS = 1, tG = 0.15, p = 100, l = 0.8, p10 = 2, p01 = 51),
                       a.sigma = 1,
                       R.sigma = rep(1, numRegions),
                       S.sigma = rep(1, numWeeks),
@@ -123,6 +133,8 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
                       #B.sigma = matrix(1, nrow = numRegionsGroups, ncol = numSequenceGroups),
                       #B.sigma = rep(1, numBeta),
                       l.sigma = 1,
+                      p10.sigma = 1,
+                      p01.sigma = 1,
                       ifPlot = FALSE,
                       configUpdates = list(ifAUpdate = 1, ifRUpdate = 1, ifSUpdate = 1, ifGUpdate = 1, ifBUpdate = 1, ifXUpdate = 1,
                                            ifPUpdate = 1, ifTauRUpdate = 1, ifTauSUpdate = 1, ifLTauGUpdate = 1)){
@@ -153,6 +165,11 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
     parameters$G <- parameters$G - mean(parameters$G) # update G inititalisation 26.02.2020
     if(dimBeta == 123){
       parameters$B <- array(exp(rnorm(prod(numBlockDims), mean = parametersVar1$B, sd = parametersVar2$B)), dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))
+    }
+    if(autocorrPrior == 1){ # autocorrelation X update 13.04.2020
+      parameters$p <- NULL
+      parameters$p10 <- rbeta(1, shape1 = parametersVar1$p10, shape2 = parametersVar2$p10)
+      parameters$p01 <- rbeta(1, shape1 = parametersVar1$p01, shape2 = parametersVar2$p01)
     }
     
     # Modify according to the dimensions included
@@ -191,6 +208,11 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
       parameters$B <- configUpdates$ifBUpdate*array(exp(rnorm(prod(numBlockDims), mean = parametersVar1$B, sd = parametersVar2$B)),
                                                     dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups)) + (!configUpdates$ifBUpdate)*simulatedParam$B
     }
+    if(autocorrPrior == 1){ # autocorrelation X update 13.04.2020
+      parameters$p <- NULL
+      parameters$p10 <- configUpdates$ifPUpdate*rbeta(1, shape1 = parametersVar1$p10, shape2 = parametersVar2$p10) + (!configUpdates$ifPUpdate)*simulatedParam$p10
+      parameters$p01 <- configUpdates$ifPUpdate*rbeta(1, shape1 = parametersVar1$p01, shape2 = parametersVar2$p01) + (!configUpdates$ifPUpdate)*simulatedParam$p01
+    }
     
     # ???
     #if(0){
@@ -212,7 +234,9 @@ initParam <- function(parametersVar1 = list(a = 0, R = 0, S = 0, G = 0, B = 0, t
                      S = S.sigma,
                      G = G.sigma,
                      B = B.sigma,
-                     l = l.sigma)
+                     l = l.sigma,
+                     p10 = p10.sigma,
+                     p01 = p01.sigma)
   
   param <- list(parameters = parameters,
                 # Jump variance
@@ -288,6 +312,18 @@ createStorage <- function(config){
     reject$B <- array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))
     parameters.stored$B <- array(0, dim = c(numWeeksGroups, numRegionsGroups, numSequenceGroups))
   }
+  if(autocorrPrior == 1){ # autocorrelation X update 13.04.2020
+    accept$p <- NULL
+    reject$p <- NULL
+    parameters.stored$p <- NULL
+    accept$p10 <- 0
+    reject$p10 <- 0
+    parameters.stored$p10 <- rep(0, numIterations)
+    accept$p01 <- 0
+    reject$p01 <- 0
+    parameters.stored$p01 <- rep(0, numIterations)
+  }
+  
   storage <- list(accept = accept,
                   reject = reject,
                   parameters = parameters.stored)
